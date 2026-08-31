@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CountdownTimer } from './CountdownTimer'
 import { Scoreboard } from './Scoreboard'
 import { TileInput } from './TileInput'
+import { playInvalidGuessSound, playOpponentScoreSound, playValidGuessSound } from '../../utils/sound'
 import type { GuessFeedbackEvent, PlayerView } from '../../types/game'
 
 interface PlayViewProps {
@@ -32,11 +33,28 @@ export function PlayView({
   quitError,
 }: PlayViewProps) {
   const [toast, setToast] = useState<GuessFeedbackEvent | null>(null)
+  const [flash, setFlash] = useState<{ playerId: string; token: number } | null>(null)
+  const flashTokenRef = useRef(0)
 
   useEffect(() => {
-    if (lastFeedback && lastFeedback.playerId === meId) {
+    if (!lastFeedback) return
+
+    if (lastFeedback.playerId === meId) {
       setToast(lastFeedback)
       const timeout = setTimeout(() => setToast(null), 2000)
+      if (lastFeedback.outcome === 'VALID') {
+        playValidGuessSound()
+      } else {
+        playInvalidGuessSound()
+      }
+      return () => clearTimeout(timeout)
+    }
+
+    if (lastFeedback.outcome === 'VALID') {
+      playOpponentScoreSound()
+      flashTokenRef.current += 1
+      setFlash({ playerId: lastFeedback.playerId, token: flashTokenRef.current })
+      const timeout = setTimeout(() => setFlash(null), 900)
       return () => clearTimeout(timeout)
     }
   }, [lastFeedback, meId])
@@ -65,7 +83,7 @@ export function PlayView({
 
         <div className="live-scores">
           <h2>Scores</h2>
-          <Scoreboard players={players} meId={meId} />
+          <Scoreboard players={players} meId={meId} flashPlayerId={flash?.playerId ?? null} flashToken={flash?.token} />
         </div>
       </div>
 

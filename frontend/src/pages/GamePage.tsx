@@ -126,6 +126,7 @@ export function GamePage() {
           winners={state.winners}
           players={state.players}
           meId={meId}
+          yourFoundWords={state.yourFoundWords}
         />
       </main>
     )

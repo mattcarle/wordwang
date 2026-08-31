@@ -7,9 +7,10 @@ interface ResultsViewProps {
   winners: PlayerView[]
   players: PlayerView[]
   meId: string | null
+  yourFoundWords: string[]
 }
 
-export function ResultsView({ solutionWord, winners, players, meId }: ResultsViewProps) {
+export function ResultsView({ solutionWord, winners, players, meId, yourFoundWords }: ResultsViewProps) {
   const winnerNames = winners.map((w) => w.name).join(' & ')
 
   return (
@@ -21,6 +22,17 @@ export function ResultsView({ solutionWord, winners, players, meId }: ResultsVie
         <p className="winner-announcement">
           {winners.length > 1 ? `${winnerNames} tie for the win!` : `${winnerNames} wins!`}
         </p>
+      )}
+
+      {meId && yourFoundWords.length > 0 && (
+        <div className="found-words">
+          <h2>Your words ({yourFoundWords.length})</h2>
+          <ul>
+            {yourFoundWords.map((word) => (
+              <li key={word}>{word}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="final-scores">

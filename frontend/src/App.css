@@ -280,6 +280,19 @@ input[type='text']:focus {
   outline: 2px solid var(--accent);
 }
 
+.scoreboard-flash {
+  animation: scoreboardFlash 0.9s ease-out;
+}
+
+@keyframes scoreboardFlash {
+  0% {
+    background: var(--accent);
+  }
+  100% {
+    background: var(--bg);
+  }
+}
+
 .scoreboard-name {
   font-weight: 600;
 }
