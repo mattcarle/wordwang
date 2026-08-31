@@ -7,6 +7,7 @@ import com.wordwang.game.dto.GameStartedEvent;
 import com.wordwang.game.dto.GameSummaryResponse;
 import com.wordwang.game.dto.JoinGameRequest;
 import com.wordwang.game.dto.JoinGameResponse;
+import com.wordwang.game.dto.JoinableGameView;
 import com.wordwang.game.dto.PlayerJoinedEvent;
 import com.wordwang.game.dto.QuitGameRequest;
 import com.wordwang.game.dto.StartGameRequest;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -49,6 +51,11 @@ public class GameController {
         Game game = gameService.createGame(request.organiserName());
         Player organiser = game.getPlayer(game.getOrganiserId());
         return new CreateGameResponse(game.getId(), organiser.getId(), organiser.getName(), game.getStatus());
+    }
+
+    @GetMapping("/joinable")
+    public List<JoinableGameView> listJoinableGames() {
+        return gameService.listJoinableGames();
     }
 
     @GetMapping("/{gameId}")

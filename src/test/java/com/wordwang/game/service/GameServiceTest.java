@@ -229,6 +229,21 @@ class GameServiceTest {
     }
 
     @Test
+    void listJoinableGamesReturnsOnlyLobbyGames() {
+        Game lobbyGame = gameService.createGame("Alice");
+        gameService.joinGame(lobbyGame.getId(), "Bob");
+        Game startedGame = gameService.createGame("Carol");
+        gameService.startGame(startedGame.getId(), startedGame.getOrganiserId());
+
+        var joinable = gameService.listJoinableGames();
+
+        assertThat(joinable).hasSize(1);
+        assertThat(joinable.get(0).gameId()).isEqualTo(lobbyGame.getId());
+        assertThat(joinable.get(0).organiserName()).isEqualTo("Alice");
+        assertThat(joinable.get(0).playerCount()).isEqualTo(2);
+    }
+
+    @Test
     void concurrentJoinsDoNotCorruptPlayerList() throws InterruptedException {
         Game game = gameService.createGame("Alice");
         int joiners = 20;

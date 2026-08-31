@@ -41,6 +41,36 @@
   margin-top: 0.75rem;
 }
 
+.joinable-games {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.joinable-games ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.joinable-games li a {
+  display: block;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.joinable-games li a:hover {
+  border-color: var(--accent);
+}
+
 .btn {
   font-family: var(--display);
   font-weight: 700;

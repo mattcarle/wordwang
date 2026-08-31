@@ -3,12 +3,17 @@ import type {
   CreateGameResponse,
   GameSnapshotResponse,
   GameSummaryResponse,
+  JoinableGameView,
   JoinGameResponse,
   StartGameResponse,
 } from '../types/game'
 
 export function createGame(organiserName: string): Promise<CreateGameResponse> {
   return post<CreateGameResponse>('/api/games', { organiserName })
+}
+
+export function getJoinableGames(): Promise<JoinableGameView[]> {
+  return get<JoinableGameView[]>('/api/games/joinable')
 }
 
 export function getGameSummary(gameId: string): Promise<GameSummaryResponse> {

@@ -6,6 +6,7 @@ import com.wordwang.game.dto.GameEndResult;
 import com.wordwang.game.dto.GameSnapshotResponse;
 import com.wordwang.game.dto.GameSummaryResponse;
 import com.wordwang.game.dto.GuessSubmissionResult;
+import com.wordwang.game.dto.JoinableGameView;
 import com.wordwang.game.dto.PlayerView;
 import com.wordwang.game.model.Game;
 import com.wordwang.game.model.GameStatus;
@@ -169,6 +170,21 @@ public class GameService {
                     yourFoundWords,
                     winners);
         }
+    }
+
+    public List<JoinableGameView> listJoinableGames() {
+        return games.values().stream()
+                .filter(game -> game.getStatus() == GameStatus.LOBBY)
+                .sorted(Comparator.comparing(Game::getCreatedAt).reversed())
+                .limit(20)
+                .map(game -> {
+                    synchronized (game) {
+                        Player organiser = game.getPlayer(game.getOrganiserId());
+                        String organiserName = organiser == null ? "" : organiser.getName();
+                        return new JoinableGameView(game.getId(), organiserName, game.playerList().size());
+                    }
+                })
+                .toList();
     }
 
     @Scheduled(fixedRate = 60_000)

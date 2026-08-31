@@ -48,6 +48,12 @@ export interface GameSnapshotResponse {
   winners: PlayerView[]
 }
 
+export interface JoinableGameView {
+  gameId: string
+  organiserName: string
+  playerCount: number
+}
+
 export interface HighScoreView {
   playerName: string
   score: number
