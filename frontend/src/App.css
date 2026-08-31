@@ -339,11 +339,11 @@ input[type='text']:focus {
   justify-content: center;
 }
 
-/* Mobile: compact everything so the play screen fits without scrolling */
+/* Mobile: fit the play screen without scrolling, but keep text/buttons readable */
 @media (max-width: 600px) {
   .home,
   .page {
-    padding: 0.75rem 0.6rem;
+    padding: 0.5rem 0.5rem;
     min-height: 100dvh;
   }
 
@@ -360,7 +360,7 @@ input[type='text']:focus {
   }
 
   h2 {
-    font-size: 0.95rem;
+    font-size: 1rem;
     margin-bottom: 0.25rem;
   }
 
@@ -369,30 +369,30 @@ input[type='text']:focus {
   }
 
   .play-header {
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
   }
 
   .countdown-timer {
-    font-size: 1.1rem;
-    padding: 0.1rem 0.6rem;
-    min-width: 2.5rem;
+    font-size: 1.3rem;
+    padding: 0.2rem 0.9rem;
+    min-width: 3rem;
   }
 
   .feedback-toast {
-    min-height: 1.1rem;
-    font-size: 0.8rem;
+    min-height: 1.2rem;
+    font-size: 0.9rem;
     margin: 0.2rem 0;
     padding: 0.2rem;
   }
 
   .play-body {
     gap: 0.6rem;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
   }
 
   .found-words li {
-    padding: 0.1rem 0.35rem;
-    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.85rem;
   }
 
   .scoreboard {
@@ -400,8 +400,8 @@ input[type='text']:focus {
   }
 
   .scoreboard li {
-    padding: 0.25rem 0.4rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.95rem;
   }
 
   .lobby-players {
@@ -413,7 +413,7 @@ input[type='text']:focus {
   }
 
   .btn {
-    padding: 0.45rem 1.1rem;
-    font-size: 0.9rem;
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
   }
 }

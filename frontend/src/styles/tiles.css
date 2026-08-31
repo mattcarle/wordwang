@@ -71,40 +71,60 @@
   gap: 0.75rem;
 }
 
-/* Mobile: shrink to fit and never wrap, however many tiles there are */
+/* Mobile: the entered word never wraps (shrinks to fit instead); the letter
+   bank lays out as 2 rows of 4 so each tile can stay big and legible. */
 @media (max-width: 600px) {
   .tile-input {
     gap: 0.5rem;
   }
 
-  .tile-row {
+  .tile-row-current {
     flex-wrap: nowrap;
     min-height: 0;
     gap: 0.25rem;
     width: 100%;
-  }
-
-  .tile-row-current {
     padding-bottom: 0.4rem;
   }
 
-  .tile-row-bank .tile,
   .tile-row-current .tile {
     flex: 1 1 0;
     width: auto;
     min-width: 0;
-    max-width: 2.8rem;
+    max-width: 3rem;
     aspect-ratio: 1 / 1;
     height: auto;
-    font-size: clamp(0.65rem, 5.5vw, 1.4rem);
+    font-size: clamp(0.85rem, 6vw, 1.5rem);
+  }
+
+  .tile-row-bank {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .tile-row-bank .tile {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    font-size: clamp(1.4rem, 7.5vw, 2.1rem);
   }
 
   .tile-input-actions {
     gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tile-backspace {
+    font-size: 1.3rem;
+    line-height: 1;
+    padding: 0.5rem 1rem;
   }
 
   .tile-placeholder {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     white-space: nowrap;
   }
 }

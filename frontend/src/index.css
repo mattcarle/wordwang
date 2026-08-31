@@ -35,12 +35,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (max-width: 600px) {
-  :root {
-    font-size: 15px;
-  }
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #d8d3e3;

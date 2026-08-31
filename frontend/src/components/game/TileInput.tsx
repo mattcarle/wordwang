@@ -99,6 +99,15 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
       </div>
 
       <div className="tile-input-actions">
+        <button
+          type="button"
+          className="btn btn-secondary tile-backspace"
+          onClick={removeLast}
+          disabled={disabled || currentWord.length === 0}
+          aria-label="Remove last letter"
+        >
+          ⌫
+        </button>
         <button type="button" className="btn btn-secondary" onClick={clear} disabled={disabled || currentWord.length === 0}>
           Clear
         </button>
