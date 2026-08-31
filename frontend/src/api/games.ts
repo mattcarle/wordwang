@@ -27,3 +27,7 @@ export function joinGame(gameId: string, playerName: string): Promise<JoinGameRe
 export function startGame(gameId: string, playerId: string): Promise<StartGameResponse> {
   return post<StartGameResponse>(`/api/games/${gameId}/start`, { playerId })
 }
+
+export function quitGame(gameId: string, playerId: string): Promise<void> {
+  return post<void>(`/api/games/${gameId}/quit`, { playerId })
+}

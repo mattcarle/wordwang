@@ -8,6 +8,7 @@ import com.wordwang.game.dto.GameSummaryResponse;
 import com.wordwang.game.dto.JoinGameRequest;
 import com.wordwang.game.dto.JoinGameResponse;
 import com.wordwang.game.dto.PlayerJoinedEvent;
+import com.wordwang.game.dto.QuitGameRequest;
 import com.wordwang.game.dto.StartGameRequest;
 import com.wordwang.game.dto.StartGameResponse;
 import com.wordwang.game.model.Game;
@@ -76,5 +77,12 @@ public class GameController {
         GameStartedEvent event = new GameStartedEvent(game.getScrambledWord(), game.getEndsAt());
         messagingTemplate.convertAndSend("/topic/game/" + gameId, event);
         return new StartGameResponse(gameId, game.getStatus(), game.getScrambledWord(), game.getEndsAt());
+    }
+
+    @PostMapping("/{gameId}/quit")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void quit(@PathVariable String gameId, @RequestBody QuitGameRequest request) {
+        gameService.requestQuit(gameId, request.playerId());
+        gameFinalizerScheduler.finalizeNow(gameId);
     }
 }

@@ -153,7 +153,7 @@ class GameServiceTest {
         gameService.submitGuess(game.getId(), game.getOrganiserId(), "rating"); // 10 points
         gameService.submitGuess(game.getId(), bob.getId(), "art"); // 1 point
 
-        GameEndResult end = gameService.finalizeGame(game.getId());
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
 
         assertThat(end.solutionWord()).isEqualTo("GRADIENT");
         assertThat(end.winners()).hasSize(1);
@@ -171,9 +171,47 @@ class GameServiceTest {
         gameService.submitGuess(game.getId(), game.getOrganiserId(), "rat"); // 1 point
         gameService.submitGuess(game.getId(), bob.getId(), "art"); // 1 point
 
-        GameEndResult end = gameService.finalizeGame(game.getId());
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
 
         assertThat(end.winners()).hasSize(2);
+    }
+
+    @Test
+    void finalizeGameOnlyReturnsAResultTheFirstTimeItsCalled() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        assertThat(gameService.finalizeGame(game.getId())).isPresent();
+        assertThat(gameService.finalizeGame(game.getId())).isEmpty();
+    }
+
+    @Test
+    void organiserCanQuitAnInProgressGame() {
+        Game game = gameService.createGame("Alice");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.requestQuit(game.getId(), game.getOrganiserId());
+        // requestQuit only validates; GameFinalizerScheduler performs the actual finalization.
+        assertThat(game.getStatus()).isEqualTo(GameStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void nonOrganiserCannotQuitTheGame() {
+        Game game = gameService.createGame("Alice");
+        Player bob = gameService.joinGame(game.getId(), "Bob");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        assertThatThrownBy(() -> gameService.requestQuit(game.getId(), bob.getId()))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void cannotQuitAGameThatHasNotStarted() {
+        Game game = gameService.createGame("Alice");
+
+        assertThatThrownBy(() -> gameService.requestQuit(game.getId(), game.getOrganiserId()))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

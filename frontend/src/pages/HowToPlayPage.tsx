@@ -7,7 +7,7 @@ export function HowToPlayPage() {
       <ol className="how-to-play-list">
         <li>An 8-letter word is scrambled and shown to everyone as tiles.</li>
         <li>
-          You have <strong>3 minutes</strong> to find as many words as you can using those letters — including,
+          You have <strong>2 minutes</strong> to find as many words as you can using those letters — including,
           if you can spot it, the full 8-letter word.
         </li>
         <li>Click tiles or type on your keyboard. You can only use each letter as many times as it appears.</li>

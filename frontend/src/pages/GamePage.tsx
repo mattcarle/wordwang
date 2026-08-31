@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { joinGame, startGame } from '../api/games'
+import { joinGame, quitGame, startGame } from '../api/games'
 import { LobbyView } from '../components/lobby/LobbyView'
 import { PlayView } from '../components/game/PlayView'
 import { ResultsView } from '../components/results/ResultsView'
@@ -15,6 +15,8 @@ export function GamePage() {
   const [joinError, setJoinError] = useState<string | null>(null)
   const [startBusy, setStartBusy] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
+  const [quitBusy, setQuitBusy] = useState(false)
+  const [quitError, setQuitError] = useState<string | null>(null)
 
   const { state, submitGuess, lastFeedback } = useGameState(gameId, meId)
 
@@ -46,6 +48,18 @@ export function GamePage() {
     } catch (err) {
       setStartError(err instanceof Error ? err.message : 'Failed to start game')
       setStartBusy(false)
+    }
+  }
+
+  async function handleQuit() {
+    if (!meId) return
+    setQuitBusy(true)
+    setQuitError(null)
+    try {
+      await quitGame(gameId!, meId)
+    } catch (err) {
+      setQuitError(err instanceof Error ? err.message : 'Failed to end game')
+      setQuitBusy(false)
     }
   }
 
@@ -89,9 +103,13 @@ export function GamePage() {
           endsAt={state.endsAt}
           players={state.players}
           meId={meId}
+          isOrganiser={meId !== null && meId === state.organiserId}
           yourFoundWords={state.yourFoundWords}
           lastFeedback={lastFeedback}
           onSubmitGuess={submitGuess}
+          onQuit={handleQuit}
+          quitBusy={quitBusy}
+          quitError={quitError}
         />
       </main>
     )

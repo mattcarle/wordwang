@@ -1,6 +1,5 @@
 package com.wordwang.game.service;
 
-import com.wordwang.game.dto.GameEndResult;
 import com.wordwang.game.dto.GameEndedEvent;
 import com.wordwang.game.dto.PlayerView;
 import com.wordwang.highscore.HighScoreService;
@@ -9,6 +8,9 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 
 @Component
 public class GameFinalizerScheduler {
@@ -17,6 +19,7 @@ public class GameFinalizerScheduler {
     private final GameService gameService;
     private final HighScoreService highScoreService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final Map<String, ScheduledFuture<?>> scheduledFinalizations = new ConcurrentHashMap<>();
 
     public GameFinalizerScheduler(TaskScheduler taskScheduler, GameService gameService,
                                    HighScoreService highScoreService, SimpMessagingTemplate messagingTemplate) {
@@ -27,15 +30,31 @@ public class GameFinalizerScheduler {
     }
 
     public void scheduleFinalization(String gameId, Instant endsAt) {
-        taskScheduler.schedule(() -> finalizeAndBroadcast(gameId), endsAt);
+        ScheduledFuture<?> future = taskScheduler.schedule(() -> finalizeAndBroadcast(gameId), endsAt);
+        scheduledFinalizations.put(gameId, future);
+    }
+
+    /**
+     * Ends the round immediately (e.g. the organiser quit the game). Cancels the pending
+     * scheduled end-of-round task; {@link GameService#finalizeGame} is idempotent regardless, so
+     * this is safe even if the scheduled task is already running.
+     */
+    public void finalizeNow(String gameId) {
+        ScheduledFuture<?> future = scheduledFinalizations.remove(gameId);
+        if (future != null) {
+            future.cancel(false);
+        }
+        finalizeAndBroadcast(gameId);
     }
 
     private void finalizeAndBroadcast(String gameId) {
-        GameEndResult result = gameService.finalizeGame(gameId);
-        for (PlayerView player : result.players()) {
-            highScoreService.recordScore(player.name(), player.score(), gameId);
-        }
-        GameEndedEvent event = new GameEndedEvent(result.solutionWord(), result.winners(), result.players());
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, event);
+        scheduledFinalizations.remove(gameId);
+        gameService.finalizeGame(gameId).ifPresent(result -> {
+            for (PlayerView player : result.players()) {
+                highScoreService.recordScore(player.name(), player.score(), gameId);
+            }
+            GameEndedEvent event = new GameEndedEvent(result.solutionWord(), result.winners(), result.players());
+            messagingTemplate.convertAndSend("/topic/game/" + gameId, event);
+        });
     }
 }

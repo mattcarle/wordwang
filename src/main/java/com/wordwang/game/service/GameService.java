@@ -20,13 +20,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GameService {
 
-    static final Duration ROUND_DURATION = Duration.ofMinutes(3);
+    static final Duration ROUND_DURATION = Duration.ofMinutes(2);
     private static final Duration LOBBY_TTL = Duration.ofMinutes(30);
     private static final Duration FINISHED_TTL = Duration.ofMinutes(10);
 
@@ -106,19 +107,37 @@ public class GameService {
         }
     }
 
-    public GameEndResult finalizeGame(String gameId) {
+    /**
+     * Transitions the game to FINISHED and computes the result, but only the first caller for a
+     * given game gets a result back — later calls (e.g. a race between the scheduled end-of-round
+     * task and an organiser quitting early) return empty so the game only gets finalized once.
+     */
+    public Optional<GameEndResult> finalizeGame(String gameId) {
         Game game = requireGame(gameId);
         synchronized (game) {
-            if (game.getStatus() != GameStatus.FINISHED) {
-                game.setStatus(GameStatus.FINISHED);
-                game.setFinishedAt(Instant.now());
+            if (game.getStatus() == GameStatus.FINISHED) {
+                return Optional.empty();
             }
+            game.setStatus(GameStatus.FINISHED);
+            game.setFinishedAt(Instant.now());
             List<PlayerView> players = sortedPlayerViews(game);
             int topScore = players.stream().mapToInt(PlayerView::score).max().orElse(0);
             List<PlayerView> winners = players.stream()
                     .filter(p -> p.score() == topScore)
                     .toList();
-            return new GameEndResult(game.getId(), game.getSolutionWord(), winners, players);
+            return Optional.of(new GameEndResult(game.getId(), game.getSolutionWord(), winners, players));
+        }
+    }
+
+    public void requestQuit(String gameId, UUID requestingPlayerId) {
+        Game game = requireGame(gameId);
+        synchronized (game) {
+            if (!game.isOrganiser(requestingPlayerId)) {
+                throw new ForbiddenException("Only the organiser can end the game");
+            }
+            if (game.getStatus() != GameStatus.IN_PROGRESS) {
+                throw new IllegalStateException("Game " + gameId + " is not in progress");
+            }
         }
     }
 
