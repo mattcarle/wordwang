@@ -47,9 +47,9 @@ npm install
 npm run dev
 ```
 
-Starts on `http://localhost:5174`. The dev server proxies `/api` and `/ws` requests to the backend on port 8081, and binds to all network interfaces (`host: true` in `vite.config.ts`), so it's also reachable from other devices on your LAN at `http://<your-lan-ip>:5174`.
+Starts on `http://localhost:5174/wordwang/` — served from that path prefix rather than the site root even locally, matching how it's deployed in production (see "Deploying with Docker" below), so dev and prod behave the same way. The dev server proxies `<prefix>/api` and `<prefix>/ws` requests to the backend on port 8081, and binds to all network interfaces (`host: true` in `vite.config.ts`), so it's also reachable from other devices on your LAN at `http://<your-lan-ip>:5174/wordwang/`.
 
-Open `http://localhost:5174` in a browser and click **New Game** to start playing.
+Open `http://localhost:5174/wordwang/` in a browser and click **New Game** to start playing.
 
 ## Testing
 
@@ -65,6 +65,57 @@ Open `http://localhost:5174` in a browser and click **New Game** to start playin
 cd frontend
 npm run build
 ```
+
+## Deploying with Docker
+
+This app shares its host and domain (`carle7.com`) with other apps behind a single reverse proxy
+— see the separate [`carle7-edge`](https://github.com/mattcarle/carle7-edge) repo, which is the
+only thing on the host that binds ports 80/443 or terminates TLS. The included
+`docker-compose.yml` here runs just this app's own two containers, on a private network plus the
+`carle7-edge` network that proxy reaches them on:
+
+- **`app`** — the Spring Boot backend, built by the root `Dockerfile`, running on plain HTTP
+  internally (port 8080, not published to the host). Its H2 database file lives in the `h2-data`
+  named volume, so it survives container rebuilds/restarts. The H2 console is disabled in this
+  config.
+- **`caddy`** — built by `frontend/Dockerfile`, serves the built static files and reverse-proxies
+  `/wordwang/api/*` and `/wordwang/ws` to `app`. It speaks plain HTTP on the Docker network only
+  (no TLS, no published ports) — `carle7-edge` forwards it everything under `/wordwang/*`
+  unmodified, still carrying that prefix.
+
+### First-time deployment
+
+1. Bring up [`carle7-edge`](https://github.com/mattcarle/carle7-edge) first if it isn't already
+   running — it creates the `carle7-edge` Docker network this app's `caddy` service attaches to.
+   `docker compose up` here fails until that network exists.
+2. Build and start both containers:
+
+   ```bash
+   docker compose up -d --build
+   ```
+3. Open `https://<SITE_ADDRESS>/wordwang/` (`SITE_ADDRESS` is configured in `carle7-edge`, not
+   here).
+
+Check container status/logs with:
+
+```bash
+docker compose ps
+docker compose logs -f app       # backend logs
+docker compose logs -f caddy     # reverse proxy logs
+```
+
+### Updating after code or config changes
+
+```bash
+# Backend code (src/), pom.xml, or Dockerfile changes
+docker compose build app && docker compose up -d app
+
+# Frontend code (frontend/src/), frontend/Dockerfile, or frontend/Caddyfile changes
+docker compose build caddy && docker compose up -d caddy
+```
+
+The `h2-data` volume is untouched by rebuilds or `docker compose down`, so high scores persist
+across updates. Only `docker compose down -v` (or manually removing the volume) deletes it.
 
 ## Project structure
 

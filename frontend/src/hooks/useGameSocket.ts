@@ -3,6 +3,13 @@ import SockJS from 'sockjs-client'
 import { useEffect, useRef, useState } from 'react'
 import type { GameEvent } from '../types/game'
 
+// Derived from Vite's `base` (see vite.config.ts and api/client.ts) - this app is served from a
+// path prefix (e.g. /wordwang/) behind the shared carle7-edge reverse proxy, not the domain root,
+// so the SockJS negotiation requests (which are real HTTP requests) need that same prefix. The
+// STOMP destinations used elsewhere in this file (/topic/..., /app/...) are logical channel names
+// within the STOMP protocol itself, not URLs, so they're unaffected.
+const WS_BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+
 export function useGameSocket(gameId: string | undefined, onEvent: (event: GameEvent) => void) {
   const clientRef = useRef<Client | null>(null)
   const onEventRef = useRef(onEvent)
@@ -18,7 +25,7 @@ export function useGameSocket(gameId: string | undefined, onEvent: (event: GameE
     }
 
     const client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
+      webSocketFactory: () => new SockJS(`${WS_BASE}/ws`),
       reconnectDelay: 2000,
     })
 

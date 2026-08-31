@@ -1,0 +1,40 @@
+# This app runs behind the shared carle7-edge reverse proxy (see the carle7-edge repo), which
+# owns the real domain, TLS, and the site root - this Caddy only ever sees plain HTTP on the
+# Docker network, still carrying the $APP_PATH prefix the edge routed on. Its own site address is
+# deliberately just the port, not a hostname, so Caddy doesn't attempt automatic HTTPS for it.
+:80 {
+	encode gzip
+
+	# The app lives at $APP_PATH (see frontend/vite.config.ts's `base`), calls
+	# $APP_PATH/api/... for its REST API, and connects to $APP_PATH/ws for the STOMP/SockJS
+	# real-time channel (see frontend/src/api/client.ts and frontend/src/hooks/useGameSocket.ts).
+	# Caddy reorders bare directives by its own fixed precedence (try_files/file_server always run
+	# before reverse_proxy, regardless of source order), so `handle`/`handle_path` blocks are used
+	# throughout - they're evaluated in the order written and are mutually exclusive, which keeps
+	# that reordering from routing requests to the wrong place. reverse_proxy forwards WebSocket
+	# upgrade requests transparently, so no extra config is needed for the SockJS websocket
+	# transport specifically.
+	handle {$APP_PATH:/wordwang}/api/* {
+		uri strip_prefix {$APP_PATH:/wordwang}
+		reverse_proxy {$APP_UPSTREAM:app}:8080
+	}
+
+	handle {$APP_PATH:/wordwang}/ws* {
+		uri strip_prefix {$APP_PATH:/wordwang}
+		reverse_proxy {$APP_UPSTREAM:app}:8080
+	}
+
+	# redir's 2-arg form ("<to> <code>") is ambiguous with its "[<matcher>] <to>" form - Caddy
+	# treats a bare 2nd arg as the matcher and the status code as the destination, producing a
+	# broken redirect to a literal "308" URL. The 3-arg form with an explicit "match everything"
+	# matcher (*) is unambiguous, so that's used here even though the code is unconditional.
+	handle {$APP_PATH:/wordwang} {
+		redir * {$APP_PATH:/wordwang}/ 308
+	}
+
+	handle_path {$APP_PATH:/wordwang}/* {
+		root * /srv
+		file_server
+		try_files {path} /index.html
+	}
+}

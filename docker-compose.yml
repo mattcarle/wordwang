@@ -1,0 +1,47 @@
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      # Explicit path instead of the default "./data/..." - a relative path would resolve
+      # against whatever the container's working directory happens to be, which is fragile.
+      # DB_CLOSE_DELAY=-1 keeps the embedded DB open for the JVM's life - without it, H2 shuts
+      # the database down the instant its last pooled connection closes (e.g. when HikariCP's
+      # default 30-minute maxLifetime retires an idle connection), and the next request fails
+      # with "The database has been closed".
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/wordwang-prod;DB_CLOSE_DELAY=-1
+      # The H2 console has no real use once this is running behind the shared reverse proxy, and
+      # there's no reason to leave a raw SQL console reachable even if routing ever changed.
+      SPRING_H2_CONSOLE_ENABLED: "false"
+    volumes:
+      - h2-data:/data
+    expose:
+      - "8080"
+    mem_limit: 1g
+
+  caddy:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - app
+    expose:
+      - "80"
+    networks:
+      # Needed to reach `app` - listing any network here drops compose's implicit default, so it's
+      # named explicitly alongside the shared one below.
+      default: {}
+      # The carle7-edge reverse proxy (see that repo) reaches this container by the alias below -
+      # bring that stack up first, since this network is only created there.
+      carle7-edge:
+        aliases:
+          - wordwang
+
+networks:
+  carle7-edge:
+    external: true
+
+volumes:
+  h2-data:

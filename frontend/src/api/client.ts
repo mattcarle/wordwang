@@ -7,8 +7,14 @@ export class ApiError extends Error {
   }
 }
 
+// Derived from Vite's `base` (see vite.config.ts) rather than hardcoded, since this app is served
+// from a path prefix (e.g. /wordwang/) behind the shared carle7-edge reverse proxy, not the
+// domain root - API calls are namespaced under that same prefix. Caddy strips it back off before
+// the request reaches the backend (see frontend/Caddyfile).
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
