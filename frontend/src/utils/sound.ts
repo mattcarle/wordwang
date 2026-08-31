@@ -1,3 +1,5 @@
+import wordwangJingleUrl from '../assets/thats-wordwang.m4a'
+
 let audioCtx: AudioContext | null = null
 
 function getContext(): AudioContext | null {
@@ -47,4 +49,13 @@ export function playInvalidGuessSound() {
 export function playOpponentScoreSound() {
   playTone(660, 0.4, 'sine', 0, 0.2)
   playTone(880, 0.3, 'sine', 0.05, 0.1)
+}
+
+/** You found the full 8-letter word. */
+export function playWordwangJingle() {
+  try {
+    void new Audio(wordwangJingleUrl).play()
+  } catch {
+    // ignore playback failures (e.g. autoplay restrictions)
+  }
 }

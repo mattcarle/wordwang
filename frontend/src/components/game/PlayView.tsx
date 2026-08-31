@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { CountdownTimer } from './CountdownTimer'
 import { Scoreboard } from './Scoreboard'
 import { TileInput } from './TileInput'
-import { playInvalidGuessSound, playOpponentScoreSound, playValidGuessSound } from '../../utils/sound'
+import {
+  playInvalidGuessSound,
+  playOpponentScoreSound,
+  playValidGuessSound,
+  playWordwangJingle,
+} from '../../utils/sound'
 import type { GuessFeedbackEvent, PlayerView } from '../../types/game'
 
 interface PlayViewProps {
@@ -43,7 +48,11 @@ export function PlayView({
       setToast(lastFeedback)
       const timeout = setTimeout(() => setToast(null), 2000)
       if (lastFeedback.outcome === 'VALID') {
-        playValidGuessSound()
+        if (lastFeedback.word.length === 8) {
+          playWordwangJingle()
+        } else {
+          playValidGuessSound()
+        }
       } else {
         playInvalidGuessSound()
       }
