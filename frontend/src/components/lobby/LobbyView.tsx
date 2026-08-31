@@ -32,7 +32,7 @@ export function LobbyView({
   startError,
 }: LobbyViewProps) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
-  const inviteUrl = `${window.location.origin}/game/${gameId}`
+  const inviteUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/game/${gameId}`
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
     `Join my WordWang game! Code: ${gameId}\n${inviteUrl}`,
   )}`

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { joinGame, quitGame, startGame } from '../api/games'
 import { LobbyView } from '../components/lobby/LobbyView'
 import { PlayView } from '../components/game/PlayView'
@@ -71,6 +71,9 @@ export function GamePage() {
     return (
       <main className="page">
         <p className="form-error">{state.error ?? 'Game not found'}</p>
+        <Link to="/" className="link">
+          ← Back to home
+        </Link>
       </main>
     )
   }
