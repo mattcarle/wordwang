@@ -14,5 +14,6 @@ public record GameSnapshotResponse(
         String solutionWord,
         Instant endsAt,
         List<PlayerView> players,
-        List<String> yourFoundWords) {
+        List<String> yourFoundWords,
+        List<PlayerView> winners) {
 }

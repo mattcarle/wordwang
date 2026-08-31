@@ -27,7 +27,7 @@ export function NameEntryForm({ initialName, label, buttonLabel, onSubmit, busy,
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        maxLength={20}
+        maxLength={10}
         autoFocus
         required
       />

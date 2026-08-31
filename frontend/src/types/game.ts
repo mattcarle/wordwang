@@ -45,6 +45,7 @@ export interface GameSnapshotResponse {
   endsAt: string | null
   players: PlayerView[]
   yourFoundWords: string[]
+  winners: PlayerView[]
 }
 
 export interface HighScoreView {

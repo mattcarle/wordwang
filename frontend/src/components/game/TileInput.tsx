@@ -70,18 +70,32 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
 
   return (
     <div className="tile-input">
-      <div className="tile-row tile-row-current" aria-label="Your word">
-        {usedIndices.length === 0 && <span className="tile-placeholder">Type or click letters…</span>}
-        {usedIndices.map((tileIndex, position) => (
+      <div className="tile-current-row-wrap">
+        <div className="tile-row tile-row-current" aria-label="Your word">
+          {usedIndices.length === 0 && <span className="tile-placeholder">Type or click letters…</span>}
+          {usedIndices.map((tileIndex, position) => (
+            <button
+              key={position}
+              type="button"
+              className="tile tile-active"
+              onClick={() => setUsedIndices((prev) => prev.filter((_, i) => i !== position))}
+            >
+              {tiles[tileIndex]}
+            </button>
+          ))}
+        </div>
+
+        {currentWord.length > 0 && (
           <button
-            key={position}
             type="button"
-            className="tile tile-active"
-            onClick={() => setUsedIndices((prev) => prev.filter((_, i) => i !== position))}
+            className="btn btn-secondary tile-backspace"
+            onClick={removeLast}
+            disabled={disabled}
+            aria-label="Remove last letter"
           >
-            {tiles[tileIndex]}
+            ⌫
           </button>
-        ))}
+        )}
       </div>
 
       <div className="tile-row tile-row-bank" aria-label="Available letters">
@@ -98,21 +112,12 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
         ))}
       </div>
 
-      <div className="tile-input-actions">
-        <button
-          type="button"
-          className="btn btn-secondary tile-backspace"
-          onClick={removeLast}
-          disabled={disabled || currentWord.length === 0}
-          aria-label="Remove last letter"
-        >
-          ⌫
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={clear} disabled={disabled || currentWord.length === 0}>
+      <div className="tile-bottom-actions">
+        <button type="button" className="btn btn-secondary tile-action-btn" onClick={clear} disabled={disabled || currentWord.length === 0}>
           Clear
         </button>
-        <button type="button" className="btn btn-primary" onClick={submit} disabled={disabled || currentWord.length === 0}>
-          Submit
+        <button type="button" className="btn btn-primary tile-action-btn" onClick={submit} disabled={disabled || currentWord.length === 0}>
+          Wang!
         </button>
       </div>
     </div>

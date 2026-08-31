@@ -4,6 +4,7 @@ import { createGame, joinGame } from '../api/games'
 import { NameEntryForm } from '../components/shared/NameEntryForm'
 import { getSavedName, saveName } from '../utils/cookies'
 import { storePlayerId } from '../utils/playerIdentity'
+import wordwangPhoto from '../assets/wordwang.jpg'
 
 type Mode = 'none' | 'new' | 'join'
 
@@ -52,8 +53,9 @@ export function HomePage() {
 
   return (
     <main className="home">
-      <h1>WordWang</h1>
-      <p className="tagline">Unscramble letters. Find words. Beat the clock.</p>
+      <img src={wordwangPhoto} alt="" className="home-photo" />
+      <h1>Let's Play Wordwang!</h1>
+      <p className="tagline">Two minutes to find as many words as you can.</p>
 
       {mode === 'none' && (
         <div className="home-actions">
@@ -100,7 +102,7 @@ export function HomePage() {
             type="text"
             value={joinName}
             onChange={(e) => setJoinName(e.target.value)}
-            maxLength={20}
+            maxLength={10}
             required
           />
           {error && <p className="form-error">{error}</p>}

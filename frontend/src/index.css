@@ -1,13 +1,13 @@
 :root {
-  --text: #3f3a4a;
-  --text-h: #1c1626;
-  --text-muted: #79738a;
-  --bg: #faf8f4;
+  --text: #5a3346;
+  --text-h: #33101f;
+  --text-muted: #a9748c;
+  --bg: #fff3f7;
   --card-bg: #ffffff;
-  --border: #e6e1ee;
+  --border: #f6d9e6;
 
-  --accent: #7c4dff;
-  --accent-dark: #5e35d1;
+  --accent: #ff4f8f;
+  --accent-dark: #e0316f;
   --accent-contrast: #ffffff;
 
   --success: #1f9d63;
@@ -17,10 +17,10 @@
   --error: #d3455b;
   --error-bg: #fbe6ea;
 
-  --tile-bg: #fff4d6;
-  --tile-border: #e0b23c;
-  --tile-text: #5b4310;
-  --tile-shadow: #c99a2b;
+  --tile-bg: #ffd9e8;
+  --tile-border: #ff8fbe;
+  --tile-text: #7a1440;
+  --tile-shadow: #e0568f;
 
   --sans: 'Nunito', system-ui, 'Segoe UI', Roboto, sans-serif;
   --display: 'Baloo 2', var(--sans);
@@ -37,15 +37,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #d8d3e3;
-    --text-h: #f4f1fa;
-    --text-muted: #a49cb8;
-    --bg: #161320;
-    --card-bg: #201c2e;
-    --border: #332c47;
+    --text: #f0d8e4;
+    --text-h: #fdeef5;
+    --text-muted: #c9a0b7;
+    --bg: #1f1420;
+    --card-bg: #2b1926;
+    --border: #45283a;
 
-    --accent: #9a7bff;
-    --accent-dark: #7c4dff;
+    --accent: #ff8fbe;
+    --accent-dark: #ff5c96;
 
     --success: #4fd897;
     --success-bg: #163425;
@@ -54,10 +54,10 @@
     --error: #ff7a90;
     --error-bg: #3a1a22;
 
-    --tile-bg: #3a3316;
-    --tile-border: #b98f2c;
-    --tile-text: #f4dfa0;
-    --tile-shadow: #90701f;
+    --tile-bg: #4a1f36;
+    --tile-border: #ff6fa5;
+    --tile-text: #ffcfe3;
+    --tile-shadow: #c2447a;
   }
 }
 
@@ -87,6 +87,7 @@ h2 {
 }
 
 p {
+  font-size: 1.25rem;
   margin: 0 0 0.75rem;
 }
 

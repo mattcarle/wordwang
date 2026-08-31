@@ -15,12 +15,13 @@ export function ResultsView({ solutionWord, winners, players, meId }: ResultsVie
   return (
     <div className="results-view">
       <h1>Time's up!</h1>
-      <p className="solution-reveal">
-        The word was <strong>{solutionWord}</strong>
-      </p>
-      <p className="winner-announcement">
-        {winners.length > 1 ? `${winnerNames} tie for the win!` : `${winnerNames} wins!`}
-      </p>
+      <p className="solution-reveal">The word was</p>
+      <p className="solution-word">{solutionWord}</p>
+      {winnerNames && (
+        <p className="winner-announcement">
+          {winners.length > 1 ? `${winnerNames} tie for the win!` : `${winnerNames} wins!`}
+        </p>
+      )}
 
       <div className="final-scores">
         <h2>Final Scores</h2>

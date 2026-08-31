@@ -121,10 +121,7 @@ public class GameService {
             game.setStatus(GameStatus.FINISHED);
             game.setFinishedAt(Instant.now());
             List<PlayerView> players = sortedPlayerViews(game);
-            int topScore = players.stream().mapToInt(PlayerView::score).max().orElse(0);
-            List<PlayerView> winners = players.stream()
-                    .filter(p -> p.score() == topScore)
-                    .toList();
+            List<PlayerView> winners = computeWinners(players);
             return Optional.of(new GameEndResult(game.getId(), game.getSolutionWord(), winners, players));
         }
     }
@@ -154,10 +151,13 @@ public class GameService {
         Game game = requireGame(gameId);
         synchronized (game) {
             Player player = playerId == null ? null : game.getPlayer(playerId);
-            String solutionWord = game.getStatus() == GameStatus.FINISHED ? game.getSolutionWord() : null;
+            boolean finished = game.getStatus() == GameStatus.FINISHED;
+            String solutionWord = finished ? game.getSolutionWord() : null;
             List<String> yourFoundWords = player == null
                     ? Collections.emptyList()
                     : List.copyOf(player.getFoundWords());
+            List<PlayerView> players = sortedPlayerViews(game);
+            List<PlayerView> winners = finished ? computeWinners(players) : Collections.emptyList();
             return new GameSnapshotResponse(
                     game.getId(),
                     game.getStatus(),
@@ -165,8 +165,9 @@ public class GameService {
                     game.getScrambledWord(),
                     solutionWord,
                     game.getEndsAt(),
-                    sortedPlayerViews(game),
-                    yourFoundWords);
+                    players,
+                    yourFoundWords,
+                    winners);
         }
     }
 
@@ -184,6 +185,11 @@ public class GameService {
                 return false;
             }
         });
+    }
+
+    private List<PlayerView> computeWinners(List<PlayerView> players) {
+        int topScore = players.stream().mapToInt(PlayerView::score).max().orElse(0);
+        return players.stream().filter(p -> p.score() == topScore).toList();
     }
 
     private List<PlayerView> sortedPlayerViews(Game game) {

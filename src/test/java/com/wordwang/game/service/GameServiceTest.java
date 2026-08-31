@@ -215,6 +215,20 @@ class GameServiceTest {
     }
 
     @Test
+    void snapshotIncludesWinnersOnceGameIsFinished() {
+        Game game = gameService.createGame("Alice");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        assertThat(gameService.getSnapshot(game.getId(), null).winners()).isEmpty();
+
+        gameService.finalizeGame(game.getId());
+
+        var snapshot = gameService.getSnapshot(game.getId(), null);
+        assertThat(snapshot.winners()).hasSize(1);
+        assertThat(snapshot.winners().get(0).name()).isEqualTo("Alice");
+    }
+
+    @Test
     void concurrentJoinsDoNotCorruptPlayerList() throws InterruptedException {
         Game game = gameService.createGame("Alice");
         int joiners = 20;

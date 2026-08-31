@@ -51,7 +51,7 @@ export function useGameState(gameId: string | undefined, playerId: string | null
           endsAt: snapshot.endsAt,
           players: snapshot.players,
           yourFoundWords: snapshot.yourFoundWords,
-          winners: [],
+          winners: snapshot.winners,
         })
       })
       .catch((err) => {
