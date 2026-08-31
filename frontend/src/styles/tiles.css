@@ -24,6 +24,12 @@
 .tile-row-current {
   flex: 1;
   min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.tile-row-current .tile {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .tile-placeholder {
