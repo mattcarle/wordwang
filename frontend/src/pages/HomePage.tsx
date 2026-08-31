@@ -1,0 +1,120 @@
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { createGame, joinGame } from '../api/games'
+import { NameEntryForm } from '../components/shared/NameEntryForm'
+import { getSavedName, saveName } from '../utils/cookies'
+import { storePlayerId } from '../utils/playerIdentity'
+
+type Mode = 'none' | 'new' | 'join'
+
+export function HomePage() {
+  const navigate = useNavigate()
+  const [mode, setMode] = useState<Mode>('none')
+  const [joinCode, setJoinCode] = useState('')
+  const [joinName, setJoinName] = useState(getSavedName())
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleNewGame(name: string) {
+    setBusy(true)
+    setError(null)
+    try {
+      saveName(name)
+      const game = await createGame(name)
+      storePlayerId(game.gameId, game.organiserId)
+      navigate(`/game/${game.gameId}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create game')
+      setBusy(false)
+    }
+  }
+
+  async function handleJoinGame(e: FormEvent) {
+    e.preventDefault()
+    const code = joinCode.trim()
+    const name = joinName.trim()
+    if (!/^\d{5}$/.test(code) || !name) {
+      setError('Enter the 5-digit game code and your name')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      saveName(name)
+      const joined = await joinGame(code, name)
+      storePlayerId(code, joined.playerId)
+      navigate(`/game/${code}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to join game')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <main className="home">
+      <h1>WordWang</h1>
+      <p className="tagline">Unscramble letters. Find words. Beat the clock.</p>
+
+      {mode === 'none' && (
+        <div className="home-actions">
+          <button type="button" className="btn btn-primary" onClick={() => setMode('new')}>
+            New Game
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={() => setMode('join')}>
+            Join Game
+          </button>
+          <Link to="/how-to-play" className="link">
+            How to Play
+          </Link>
+        </div>
+      )}
+
+      {mode === 'new' && (
+        <NameEntryForm
+          initialName={getSavedName()}
+          label="Your name"
+          buttonLabel="Create Game"
+          onSubmit={handleNewGame}
+          busy={busy}
+          error={error}
+        />
+      )}
+
+      {mode === 'join' && (
+        <form className="name-entry-form" onSubmit={handleJoinGame}>
+          <label htmlFor="join-code">Game code</label>
+          <input
+            id="join-code"
+            type="text"
+            inputMode="numeric"
+            pattern="\d{5}"
+            maxLength={5}
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, ''))}
+            autoFocus
+            required
+          />
+          <label htmlFor="join-name">Your name</label>
+          <input
+            id="join-name"
+            type="text"
+            value={joinName}
+            onChange={(e) => setJoinName(e.target.value)}
+            maxLength={20}
+            required
+          />
+          {error && <p className="form-error">{error}</p>}
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {busy ? 'Please wait…' : 'Join Game'}
+          </button>
+        </form>
+      )}
+
+      {mode !== 'none' && (
+        <button type="button" className="link back-link" onClick={() => setMode('none')}>
+          ← Back
+        </button>
+      )}
+    </main>
+  )
+}

@@ -1,0 +1,208 @@
+package com.wordwang.game.service;
+
+import com.wordwang.dictionary.DictionaryService;
+import com.wordwang.game.dto.GameEndResult;
+import com.wordwang.game.dto.GuessSubmissionResult;
+import com.wordwang.game.model.Game;
+import com.wordwang.game.model.GameStatus;
+import com.wordwang.game.model.GuessOutcome;
+import com.wordwang.game.model.Player;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class GameServiceTest {
+
+    private GameService gameService;
+
+    @BeforeEach
+    void setUp() {
+        DictionaryService dictionaryService = new DictionaryService();
+        dictionaryService.loadDictionary();
+        gameService = new GameService(dictionaryService, new GameCodeGenerator(),
+                new GuessValidator(dictionaryService, new ScoringService()));
+    }
+
+    @Test
+    void createGameStartsInLobbyWithOrganiserAsSoleMember() {
+        Game game = gameService.createGame("Alice");
+
+        assertThat(game.getId()).hasSize(5);
+        assertThat(game.getStatus()).isEqualTo(GameStatus.LOBBY);
+        assertThat(game.playerList()).hasSize(1);
+        assertThat(game.getPlayer(game.getOrganiserId()).getName()).isEqualTo("Alice");
+    }
+
+    @Test
+    void secondPlayerCanJoinLobby() {
+        Game game = gameService.createGame("Alice");
+
+        Player bob = gameService.joinGame(game.getId(), "Bob");
+
+        assertThat(game.playerList()).hasSize(2);
+        assertThat(bob.getName()).isEqualTo("Bob");
+    }
+
+    @Test
+    void duplicateNameInSameLobbyIsRejected() {
+        Game game = gameService.createGame("Alice");
+
+        assertThatThrownBy(() -> gameService.joinGame(game.getId(), "alice"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void cannotJoinAfterGameHasStarted() {
+        Game game = gameService.createGame("Alice");
+        gameService.startGame(game.getId(), game.getOrganiserId());
+
+        assertThatThrownBy(() -> gameService.joinGame(game.getId(), "Bob"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void onlyOrganiserCanStartTheGame() {
+        Game game = gameService.createGame("Alice");
+        Player bob = gameService.joinGame(game.getId(), "Bob");
+
+        assertThatThrownBy(() -> gameService.startGame(game.getId(), bob.getId()))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void startingSetsScrambledWordAndEndsAtThirtySecondsLater() {
+        Game game = gameService.createGame("Alice");
+
+        Game started = gameService.startGame(game.getId(), game.getOrganiserId());
+
+        assertThat(started.getStatus()).isEqualTo(GameStatus.IN_PROGRESS);
+        assertThat(started.getScrambledWord()).hasSize(8);
+        assertThat(started.getSolutionWord()).hasSize(8);
+        assertThat(started.getEndsAt()).isEqualTo(started.getStartedAt().plus(GameService.ROUND_DURATION));
+    }
+
+    @Test
+    void cannotStartAGameThatIsAlreadyInProgress() {
+        Game game = gameService.createGame("Alice");
+        gameService.startGame(game.getId(), game.getOrganiserId());
+
+        assertThatThrownBy(() -> gameService.startGame(game.getId(), game.getOrganiserId()))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void submitGuessBeforeGameStartsIsRejected() {
+        Game game = gameService.createGame("Alice");
+
+        assertThatThrownBy(() -> gameService.submitGuess(game.getId(), game.getOrganiserId(), "cat"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void unknownPlayerCannotSubmitAGuess() {
+        Game game = gameService.createGame("Alice");
+        gameService.startGame(game.getId(), game.getOrganiserId());
+
+        assertThatThrownBy(() -> gameService.submitGuess(game.getId(), UUID.randomUUID(), "cat"))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void validGuessScoresPointsAndUpdatesSortedPlayerList() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN"); // letters of GRADIENT
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        GuessSubmissionResult result = gameService.submitGuess(game.getId(), game.getOrganiserId(), "rating");
+
+        assertThat(result.evaluation().outcome()).isEqualTo(GuessOutcome.VALID);
+        assertThat(result.evaluation().points()).isEqualTo(10);
+        assertThat(result.players().get(0).score()).isEqualTo(10);
+    }
+
+    @Test
+    void duplicateGuessDoesNotScoreTwice() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "rating");
+        GuessSubmissionResult second = gameService.submitGuess(game.getId(), game.getOrganiserId(), "RATING");
+
+        assertThat(second.evaluation().outcome()).isEqualTo(GuessOutcome.ALREADY_FOUND);
+        assertThat(second.players().get(0).score()).isEqualTo(10);
+    }
+
+    @Test
+    void finalizeGameDeclaresHighestScorerAsSoleWinner() {
+        Game game = gameService.createGame("Alice");
+        Player bob = gameService.joinGame(game.getId(), "Bob");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "rating"); // 10 points
+        gameService.submitGuess(game.getId(), bob.getId(), "art"); // 1 point
+
+        GameEndResult end = gameService.finalizeGame(game.getId());
+
+        assertThat(end.solutionWord()).isEqualTo("GRADIENT");
+        assertThat(end.winners()).hasSize(1);
+        assertThat(end.winners().get(0).name()).isEqualTo("Alice");
+        assertThat(game.getStatus()).isEqualTo(GameStatus.FINISHED);
+    }
+
+    @Test
+    void finalizeGameListsAllTiedPlayersAsCoWinners() {
+        Game game = gameService.createGame("Alice");
+        Player bob = gameService.joinGame(game.getId(), "Bob");
+        game.setScrambledWord("TARDIGEN");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "rat"); // 1 point
+        gameService.submitGuess(game.getId(), bob.getId(), "art"); // 1 point
+
+        GameEndResult end = gameService.finalizeGame(game.getId());
+
+        assertThat(end.winners()).hasSize(2);
+    }
+
+    @Test
+    void concurrentJoinsDoNotCorruptPlayerList() throws InterruptedException {
+        Game game = gameService.createGame("Alice");
+        int joiners = 20;
+        ExecutorService pool = Executors.newFixedThreadPool(joiners);
+        CountDownLatch ready = new CountDownLatch(joiners);
+        CountDownLatch go = new CountDownLatch(1);
+
+        for (int i = 0; i < joiners; i++) {
+            int index = i;
+            pool.submit(() -> {
+                ready.countDown();
+                try {
+                    go.await();
+                    gameService.joinGame(game.getId(), "Player" + index);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
+        ready.await();
+        go.countDown();
+        pool.shutdown();
+        pool.awaitTermination(5, TimeUnit.SECONDS);
+
+        assertThat(game.playerList()).hasSize(joiners + 1);
+        List<String> names = game.playerList().stream().map(Player::getName).distinct().toList();
+        assertThat(names).hasSize(joiners + 1);
+    }
+}

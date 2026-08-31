@@ -1,0 +1,29 @@
+import { get, post } from './client'
+import type {
+  CreateGameResponse,
+  GameSnapshotResponse,
+  GameSummaryResponse,
+  JoinGameResponse,
+  StartGameResponse,
+} from '../types/game'
+
+export function createGame(organiserName: string): Promise<CreateGameResponse> {
+  return post<CreateGameResponse>('/api/games', { organiserName })
+}
+
+export function getGameSummary(gameId: string): Promise<GameSummaryResponse> {
+  return get<GameSummaryResponse>(`/api/games/${gameId}`)
+}
+
+export function getGameSnapshot(gameId: string, playerId?: string): Promise<GameSnapshotResponse> {
+  const query = playerId ? `?playerId=${encodeURIComponent(playerId)}` : ''
+  return get<GameSnapshotResponse>(`/api/games/${gameId}/snapshot${query}`)
+}
+
+export function joinGame(gameId: string, playerName: string): Promise<JoinGameResponse> {
+  return post<JoinGameResponse>(`/api/games/${gameId}/join`, { playerName })
+}
+
+export function startGame(gameId: string, playerId: string): Promise<StartGameResponse> {
+  return post<StartGameResponse>(`/api/games/${gameId}/start`, { playerId })
+}
