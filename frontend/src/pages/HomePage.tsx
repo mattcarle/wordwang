@@ -78,9 +78,15 @@ export function HomePage() {
           <button type="button" className="btn btn-secondary" onClick={handleShowJoin}>
             Join Game
           </button>
-          <Link to="/how-to-play" className="link">
-            How to Play
-          </Link>
+          <div className="home-links-row">
+            <Link to="/how-to-play" className="link">
+              How to Play
+            </Link>
+            <span className="home-links-sep">|</span>
+            <Link to="/admin" className="link">
+              Admin
+            </Link>
+          </div>
         </div>
       )}
 
@@ -151,7 +157,7 @@ export function HomePage() {
 
       {mode !== 'none' && (
         <button type="button" className="link back-link" onClick={() => setMode('none')}>
-          ← Back
+          ← Back to Home
         </button>
       )}
     </main>

@@ -72,7 +72,7 @@ export function GamePage() {
       <main className="page">
         <p className="form-error">{state.error ?? 'Game not found'}</p>
         <Link to="/" className="link">
-          ← Back to home
+          ← Back to Home
         </Link>
       </main>
     )

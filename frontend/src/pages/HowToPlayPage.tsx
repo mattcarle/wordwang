@@ -56,7 +56,7 @@ export function HowToPlayPage() {
         Whoever has the highest score when the timer runs out wins!
       </p>
       <Link to="/" className="link">
-        ← Back to home
+        ← Back to Home
       </Link>
     </main>
   )

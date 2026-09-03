@@ -45,7 +45,7 @@ export function ResultsView({ solutionWord, winners, players, meId, yourFoundWor
           View High Scores
         </Link>
         <Link to="/" className="link">
-          Back to Home
+            ← Back to Home
         </Link>
       </div>
     </div>

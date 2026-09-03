@@ -3,6 +3,7 @@ package com.wordwang.game.service;
 import com.wordwang.dictionary.DictionaryService;
 import com.wordwang.game.dto.GameEndResult;
 import com.wordwang.game.dto.GuessSubmissionResult;
+import com.wordwang.game.dto.PlayerAuditView;
 import com.wordwang.game.model.Game;
 import com.wordwang.game.model.GameStatus;
 import com.wordwang.game.model.GuessOutcome;
@@ -174,6 +175,38 @@ class GameServiceTest {
         GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
 
         assertThat(end.winners()).hasSize(2);
+    }
+
+    @Test
+    void finalizeGameBuildsAuditDataForEveryPlayer() {
+        Game game = gameService.createGame("Alice", "1.1.1.1");
+        Player bob = gameService.joinGame(game.getId(), "Bob", "2.2.2.2");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "gradient"); // finds the 8-letter word
+        gameService.submitGuess(game.getId(), bob.getId(), "art"); // 1 point, doesn't find it
+
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
+
+        assertThat(end.createdAt()).isEqualTo(game.getCreatedAt());
+        PlayerAuditView aliceAudit = end.playerAudits().stream()
+                .filter(a -> a.name().equals("Alice")).findFirst().orElseThrow();
+        PlayerAuditView bobAudit = end.playerAudits().stream()
+                .filter(a -> a.name().equals("Bob")).findFirst().orElseThrow();
+
+        assertThat(aliceAudit.organiser()).isTrue();
+        assertThat(aliceAudit.ipAddress()).isEqualTo("1.1.1.1");
+        assertThat(aliceAudit.foundEightLetterWord()).isTrue();
+        assertThat(aliceAudit.winner()).isTrue();
+        assertThat(aliceAudit.score()).isEqualTo(20);
+
+        assertThat(bobAudit.organiser()).isFalse();
+        assertThat(bobAudit.ipAddress()).isEqualTo("2.2.2.2");
+        assertThat(bobAudit.foundEightLetterWord()).isFalse();
+        assertThat(bobAudit.winner()).isFalse();
+        assertThat(bobAudit.score()).isEqualTo(1);
     }
 
     @Test

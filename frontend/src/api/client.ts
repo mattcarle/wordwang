@@ -13,13 +13,29 @@ export class ApiError extends Error {
 // the request reaches the backend (see frontend/Caddyfile).
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method ?? 'GET').toUpperCase()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(init?.headers as Record<string, string> | undefined),
+  }
+
+  // Only the admin endpoints (see api/admin.ts) sit behind Spring Security's CSRF filter -
+  // gameplay stays session/CSRF-free - but attaching this on every state-changing request is
+  // harmless when the cookie doesn't exist, so it's simplest to do it here for every caller.
+  if (method !== 'GET' && method !== 'HEAD') {
+    const csrfToken = getCookie('XSRF-TOKEN')
+    if (csrfToken) headers['X-XSRF-TOKEN'] = csrfToken
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
+    headers,
   })
 
   if (!response.ok) {
@@ -51,4 +67,8 @@ export function post<T>(path: string, body?: unknown): Promise<T> {
     method: 'POST',
     body: body === undefined ? undefined : JSON.stringify(body),
   })
+}
+
+export function del<T>(path: string): Promise<T> {
+  return request<T>(path, { method: 'DELETE' })
 }

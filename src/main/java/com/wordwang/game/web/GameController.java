@@ -16,6 +16,7 @@ import com.wordwang.game.model.Game;
 import com.wordwang.game.model.Player;
 import com.wordwang.game.service.GameFinalizerScheduler;
 import com.wordwang.game.service.GameService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,8 +48,8 @@ public class GameController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CreateGameResponse createGame(@RequestBody CreateGameRequest request) {
-        Game game = gameService.createGame(request.organiserName());
+    public CreateGameResponse createGame(@RequestBody CreateGameRequest request, HttpServletRequest httpRequest) {
+        Game game = gameService.createGame(request.organiserName(), httpRequest.getRemoteAddr());
         Player organiser = game.getPlayer(game.getOrganiserId());
         return new CreateGameResponse(game.getId(), organiser.getId(), organiser.getName(), game.getStatus());
     }
@@ -70,8 +71,9 @@ public class GameController {
     }
 
     @PostMapping("/{gameId}/join")
-    public JoinGameResponse join(@PathVariable String gameId, @RequestBody JoinGameRequest request) {
-        Player joined = gameService.joinGame(gameId, request.playerName());
+    public JoinGameResponse join(@PathVariable String gameId, @RequestBody JoinGameRequest request,
+                                  HttpServletRequest httpRequest) {
+        Player joined = gameService.joinGame(gameId, request.playerName(), httpRequest.getRemoteAddr());
         GameSummaryResponse summary = gameService.getSummary(gameId);
         messagingTemplate.convertAndSend("/topic/game/" + gameId, new PlayerJoinedEvent(summary.players()));
         return new JoinGameResponse(gameId, joined.getId(), summary.status(), summary.players());

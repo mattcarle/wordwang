@@ -42,7 +42,7 @@ export function HighScoresPage() {
         </table>
       )}
       <Link to="/" className="link">
-        ← Back to home
+        ← Back to Home
       </Link>
     </main>
   )

@@ -7,6 +7,7 @@ import com.wordwang.game.dto.GameSnapshotResponse;
 import com.wordwang.game.dto.GameSummaryResponse;
 import com.wordwang.game.dto.GuessSubmissionResult;
 import com.wordwang.game.dto.JoinableGameView;
+import com.wordwang.game.dto.PlayerAuditView;
 import com.wordwang.game.dto.PlayerView;
 import com.wordwang.game.model.Game;
 import com.wordwang.game.model.GameStatus;
@@ -22,8 +23,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class GameService {
@@ -45,8 +48,12 @@ public class GameService {
     }
 
     public Game createGame(String organiserName) {
+        return createGame(organiserName, null);
+    }
+
+    public Game createGame(String organiserName, String organiserIp) {
         String name = requireValidName(organiserName);
-        Player organiser = new Player(UUID.randomUUID(), name);
+        Player organiser = new Player(UUID.randomUUID(), name, organiserIp);
         String gameId = gameCodeGenerator.generate(games::containsKey);
         Game game = new Game(gameId, organiser);
         games.put(gameId, game);
@@ -54,6 +61,10 @@ public class GameService {
     }
 
     public Player joinGame(String gameId, String playerName) {
+        return joinGame(gameId, playerName, null);
+    }
+
+    public Player joinGame(String gameId, String playerName, String ipAddress) {
         Game game = requireGame(gameId);
         String name = requireValidName(playerName);
         synchronized (game) {
@@ -63,7 +74,7 @@ public class GameService {
             if (game.hasPlayerNamed(name)) {
                 throw new IllegalArgumentException("A player named \"" + name + "\" has already joined this game");
             }
-            Player player = new Player(UUID.randomUUID(), name);
+            Player player = new Player(UUID.randomUUID(), name, ipAddress);
             game.getPlayers().put(player.getId(), player);
             return player;
         }
@@ -123,7 +134,9 @@ public class GameService {
             game.setFinishedAt(Instant.now());
             List<PlayerView> players = sortedPlayerViews(game);
             List<PlayerView> winners = computeWinners(players);
-            return Optional.of(new GameEndResult(game.getId(), game.getSolutionWord(), winners, players));
+            List<PlayerAuditView> playerAudits = buildPlayerAudits(game, winners);
+            return Optional.of(new GameEndResult(
+                    game.getId(), game.getCreatedAt(), game.getSolutionWord(), winners, players, playerAudits));
         }
     }
 
@@ -206,6 +219,20 @@ public class GameService {
     private List<PlayerView> computeWinners(List<PlayerView> players) {
         int topScore = players.stream().mapToInt(PlayerView::score).max().orElse(0);
         return players.stream().filter(p -> p.score() == topScore).toList();
+    }
+
+    /** Richer, audit-only view of the final player list - never sent over the wire (see PlayerView for that). */
+    private List<PlayerAuditView> buildPlayerAudits(Game game, List<PlayerView> winners) {
+        Set<UUID> winnerIds = winners.stream().map(PlayerView::playerId).collect(Collectors.toSet());
+        return game.playerList().stream()
+                .map(player -> new PlayerAuditView(
+                        player.getName(),
+                        game.isOrganiser(player.getId()),
+                        player.getScore(),
+                        player.hasFound(game.getSolutionWord()),
+                        winnerIds.contains(player.getId()),
+                        player.getIpAddress()))
+                .toList();
     }
 
     private List<PlayerView> sortedPlayerViews(Game game) {

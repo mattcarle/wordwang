@@ -22,4 +22,8 @@ public class HighScoreService {
     public List<HighScoreEntry> getTopScores(int limit) {
         return repository.findAllByOrderByScoreDesc(PageRequest.of(0, limit));
     }
+
+    public void clearAll() {
+        repository.deleteAll();
+    }
 }

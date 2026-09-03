@@ -41,6 +41,21 @@
   margin-top: 0.75rem;
 }
 
+.home-links-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.home-links-row .link {
+  margin-top: 0;
+}
+
+.home-links-sep {
+  color: var(--text-muted);
+}
+
 .joinable-games {
   width: 100%;
   max-width: 320px;
@@ -177,6 +192,139 @@ input[type='text']:focus {
   font-weight: 600;
   font-size: 0.9rem;
   margin: 0;
+}
+
+.form-success {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.admin-logout {
+  margin-top: 1.5rem;
+}
+
+.admin-audit-link {
+  margin-top: 1rem;
+}
+
+.admin-home-link {
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+/* Audit trail */
+.audit-page {
+  max-width: 900px;
+}
+
+.audit-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.audit-filter input[type='date'] {
+  font-size: 0.95rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+.audit-day-nav-btn {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.audit-day-count {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.audit-games {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.audit-game {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.audit-game-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.audit-game-code {
+  color: var(--text-h);
+}
+
+.audit-game-date {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.audit-game-word {
+  font-family: var(--display);
+  letter-spacing: 0.06em;
+  color: var(--accent-dark);
+  margin-left: auto;
+}
+
+.audit-players-table-wrap {
+  overflow-x: auto;
+}
+
+.audit-players-table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.audit-players-table th,
+.audit-players-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.audit-organiser-tag {
+  margin-left: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+}
+
+.audit-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-back-link {
+  display: inline-block;
+  margin-top: 0.5rem;
 }
 
 /* How to play */
