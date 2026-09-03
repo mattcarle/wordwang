@@ -16,12 +16,21 @@
 	# transport specifically.
 	handle {$APP_PATH:/wordwang}/api/* {
 		uri strip_prefix {$APP_PATH:/wordwang}
-		reverse_proxy {$APP_UPSTREAM:app}:8080
+		# Without trusted_proxies, Caddy doesn't trust the X-Forwarded-For it received from
+		# carle7-edge (the only thing that can reach this container) and overwrites it with just
+		# carle7-edge's own container IP instead of appending to it - losing the real player IP
+		# the backend needs for the audit trail (see com.wordwang.audit). private_ranges covers
+		# carle7-edge's address since both containers sit on Docker's private network ranges.
+		reverse_proxy {$APP_UPSTREAM:app}:8080 {
+			trusted_proxies private_ranges
+		}
 	}
 
 	handle {$APP_PATH:/wordwang}/ws* {
 		uri strip_prefix {$APP_PATH:/wordwang}
-		reverse_proxy {$APP_UPSTREAM:app}:8080
+		reverse_proxy {$APP_UPSTREAM:app}:8080 {
+			trusted_proxies private_ranges
+		}
 	}
 
 	# redir's 2-arg form ("<to> <code>") is ambiguous with its "[<matcher>] <to>" form - Caddy
