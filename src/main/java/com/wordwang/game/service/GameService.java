@@ -32,6 +32,12 @@ import java.util.stream.Collectors;
 public class GameService {
 
     static final Duration ROUND_DURATION = Duration.ofMinutes(2);
+    /**
+     * Covers the "Let's play WordWang!" jingle the frontend plays before it starts ticking the
+     * 3-2-1 countdown (see START_JINGLE_DURATION_MS in sound.ts), plus a full three seconds of
+     * countdown after that.
+     */
+    static final Duration START_COUNTDOWN = Duration.ofMillis(1000).plusSeconds(3);
     private static final Duration LOBBY_TTL = Duration.ofMinutes(30);
     private static final Duration FINISHED_TTL = Duration.ofMinutes(10);
 
@@ -80,7 +86,12 @@ public class GameService {
         }
     }
 
-    public Game startGame(String gameId, UUID requestingPlayerId) {
+    /**
+     * The organiser has asked to start the game. Moves the game to STARTING and records when the
+     * pre-game countdown ends, but doesn't pick the word or open guessing yet - that happens in
+     * {@link #beginRound}, once the countdown (broadcast to every player) has played out.
+     */
+    public Game requestStart(String gameId, UUID requestingPlayerId) {
         Game game = requireGame(gameId);
         synchronized (game) {
             if (!game.isOrganiser(requestingPlayerId)) {
@@ -88,6 +99,19 @@ public class GameService {
             }
             if (game.getStatus() != GameStatus.LOBBY) {
                 throw new IllegalStateException("Game " + gameId + " is not waiting to start");
+            }
+            game.setStatus(GameStatus.STARTING);
+            game.setCountdownEndsAt(Instant.now().plus(START_COUNTDOWN));
+        }
+        return game;
+    }
+
+    /** Called once the pre-game countdown has elapsed to actually open the round for guessing. */
+    public Game beginRound(String gameId) {
+        Game game = requireGame(gameId);
+        synchronized (game) {
+            if (game.getStatus() != GameStatus.STARTING) {
+                throw new IllegalStateException("Game " + gameId + " is not starting");
             }
             String solution = dictionaryService.randomEightLetterWord();
             game.setSolutionWord(solution);
@@ -178,6 +202,7 @@ public class GameService {
                     game.getOrganiserId(),
                     game.getScrambledWord(),
                     solutionWord,
+                    game.getCountdownEndsAt(),
                     game.getEndsAt(),
                     players,
                     yourFoundWords,

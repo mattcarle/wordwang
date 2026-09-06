@@ -1,4 +1,4 @@
-export type GameStatus = 'LOBBY' | 'IN_PROGRESS' | 'FINISHED'
+export type GameStatus = 'LOBBY' | 'STARTING' | 'IN_PROGRESS' | 'FINISHED'
 
 export type GuessOutcome = 'VALID' | 'TOO_SHORT' | 'NOT_A_WORD' | 'INVALID_LETTERS' | 'ALREADY_FOUND'
 
@@ -25,8 +25,7 @@ export interface JoinGameResponse {
 export interface StartGameResponse {
   gameId: string
   status: GameStatus
-  scrambledWord: string
-  endsAt: string
+  countdownEndsAt: string
 }
 
 export interface GameSummaryResponse {
@@ -42,6 +41,7 @@ export interface GameSnapshotResponse {
   organiserId: string
   scrambledWord: string | null
   solutionWord: string | null
+  countdownEndsAt: string | null
   endsAt: string | null
   players: PlayerView[]
   yourFoundWords: string[]
@@ -63,6 +63,11 @@ export interface HighScoreView {
 export interface PlayerJoinedEvent {
   type: 'PLAYER_JOINED'
   players: PlayerView[]
+}
+
+export interface GameStartingEvent {
+  type: 'GAME_STARTING'
+  countdownEndsAt: string
 }
 
 export interface GameStartedEvent {
@@ -94,6 +99,7 @@ export interface GameEndedEvent {
 
 export type GameEvent =
   | PlayerJoinedEvent
+  | GameStartingEvent
   | GameStartedEvent
   | ScoreUpdateEvent
   | GuessFeedbackEvent

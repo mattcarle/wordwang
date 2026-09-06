@@ -12,6 +12,7 @@ public record GameSnapshotResponse(
         UUID organiserId,
         String scrambledWord,
         String solutionWord,
+        Instant countdownEndsAt,
         Instant endsAt,
         List<PlayerView> players,
         List<String> yourFoundWords,

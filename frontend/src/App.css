@@ -357,10 +357,45 @@ input[type='text']:focus {
 .lobby-view,
 .play-view,
 .results-view {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1.5rem;
+}
+
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: rgba(31, 20, 32, 0.75);
+}
+
+.countdown-number {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 5rem;
+  color: #ffffff;
+  text-shadow: 0 4px 18px rgba(255, 79, 143, 0.6);
+  animation: countdown-pop 0.9s ease-out;
+}
+
+@keyframes countdown-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  30% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .game-code {
@@ -560,6 +595,15 @@ input[type='text']:focus {
   font-family: var(--display);
   font-weight: 800;
   font-size: 1.3rem;
+  color: var(--text-h);
+}
+
+.score-summary {
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+.score-summary strong {
   color: var(--text-h);
 }
 

@@ -3,7 +3,7 @@ package com.wordwang.game.web;
 import com.wordwang.game.dto.CreateGameRequest;
 import com.wordwang.game.dto.CreateGameResponse;
 import com.wordwang.game.dto.GameSnapshotResponse;
-import com.wordwang.game.dto.GameStartedEvent;
+import com.wordwang.game.dto.GameStartingEvent;
 import com.wordwang.game.dto.GameSummaryResponse;
 import com.wordwang.game.dto.JoinGameRequest;
 import com.wordwang.game.dto.JoinGameResponse;
@@ -16,6 +16,7 @@ import com.wordwang.game.model.Game;
 import com.wordwang.game.model.Player;
 import com.wordwang.game.service.GameFinalizerScheduler;
 import com.wordwang.game.service.GameService;
+import com.wordwang.game.service.GameStartScheduler;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -37,12 +38,14 @@ public class GameController {
 
     private final GameService gameService;
     private final GameFinalizerScheduler gameFinalizerScheduler;
+    private final GameStartScheduler gameStartScheduler;
     private final SimpMessagingTemplate messagingTemplate;
 
     public GameController(GameService gameService, GameFinalizerScheduler gameFinalizerScheduler,
-                           SimpMessagingTemplate messagingTemplate) {
+                           GameStartScheduler gameStartScheduler, SimpMessagingTemplate messagingTemplate) {
         this.gameService = gameService;
         this.gameFinalizerScheduler = gameFinalizerScheduler;
+        this.gameStartScheduler = gameStartScheduler;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -81,11 +84,10 @@ public class GameController {
 
     @PostMapping("/{gameId}/start")
     public StartGameResponse start(@PathVariable String gameId, @RequestBody StartGameRequest request) {
-        Game game = gameService.startGame(gameId, request.playerId());
-        gameFinalizerScheduler.scheduleFinalization(gameId, game.getEndsAt());
-        GameStartedEvent event = new GameStartedEvent(game.getScrambledWord(), game.getEndsAt());
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, event);
-        return new StartGameResponse(gameId, game.getStatus(), game.getScrambledWord(), game.getEndsAt());
+        Game game = gameService.requestStart(gameId, request.playerId());
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, new GameStartingEvent(game.getCountdownEndsAt()));
+        gameStartScheduler.scheduleRoundStart(gameId, game.getCountdownEndsAt());
+        return new StartGameResponse(gameId, game.getStatus(), game.getCountdownEndsAt());
     }
 
     @PostMapping("/{gameId}/quit")

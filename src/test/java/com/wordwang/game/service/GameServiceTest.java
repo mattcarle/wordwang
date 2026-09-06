@@ -11,6 +11,8 @@ import com.wordwang.game.model.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -20,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 
 class GameServiceTest {
 
@@ -64,7 +67,7 @@ class GameServiceTest {
     @Test
     void cannotJoinAfterGameHasStarted() {
         Game game = gameService.createGame("Alice");
-        gameService.startGame(game.getId(), game.getOrganiserId());
+        gameService.requestStart(game.getId(), game.getOrganiserId());
 
         assertThatThrownBy(() -> gameService.joinGame(game.getId(), "Bob"))
                 .isInstanceOf(IllegalStateException.class);
@@ -75,15 +78,37 @@ class GameServiceTest {
         Game game = gameService.createGame("Alice");
         Player bob = gameService.joinGame(game.getId(), "Bob");
 
-        assertThatThrownBy(() -> gameService.startGame(game.getId(), bob.getId()))
+        assertThatThrownBy(() -> gameService.requestStart(game.getId(), bob.getId()))
                 .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
-    void startingSetsScrambledWordAndEndsAtThirtySecondsLater() {
+    void requestStartMovesGameToStartingWithACountdown() {
         Game game = gameService.createGame("Alice");
 
-        Game started = gameService.startGame(game.getId(), game.getOrganiserId());
+        Game starting = gameService.requestStart(game.getId(), game.getOrganiserId());
+
+        assertThat(starting.getStatus()).isEqualTo(GameStatus.STARTING);
+        assertThat(starting.getCountdownEndsAt())
+                .isCloseTo(Instant.now().plus(GameService.START_COUNTDOWN), within(500, ChronoUnit.MILLIS));
+        assertThat(starting.getScrambledWord()).isNull();
+    }
+
+    @Test
+    void cannotRequestStartAGameThatIsAlreadyStartingOrInProgress() {
+        Game game = gameService.createGame("Alice");
+        gameService.requestStart(game.getId(), game.getOrganiserId());
+
+        assertThatThrownBy(() -> gameService.requestStart(game.getId(), game.getOrganiserId()))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void beginRoundSetsScrambledWordAndEndsAtTwoMinutesLater() {
+        Game game = gameService.createGame("Alice");
+        gameService.requestStart(game.getId(), game.getOrganiserId());
+
+        Game started = gameService.beginRound(game.getId());
 
         assertThat(started.getStatus()).isEqualTo(GameStatus.IN_PROGRESS);
         assertThat(started.getScrambledWord()).hasSize(8);
@@ -92,11 +117,10 @@ class GameServiceTest {
     }
 
     @Test
-    void cannotStartAGameThatIsAlreadyInProgress() {
+    void cannotBeginARoundThatWasNeverAskedToStart() {
         Game game = gameService.createGame("Alice");
-        gameService.startGame(game.getId(), game.getOrganiserId());
 
-        assertThatThrownBy(() -> gameService.startGame(game.getId(), game.getOrganiserId()))
+        assertThatThrownBy(() -> gameService.beginRound(game.getId()))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -111,7 +135,8 @@ class GameServiceTest {
     @Test
     void unknownPlayerCannotSubmitAGuess() {
         Game game = gameService.createGame("Alice");
-        gameService.startGame(game.getId(), game.getOrganiserId());
+        gameService.requestStart(game.getId(), game.getOrganiserId());
+        gameService.beginRound(game.getId());
 
         assertThatThrownBy(() -> gameService.submitGuess(game.getId(), UUID.randomUUID(), "cat"))
                 .isInstanceOf(ForbiddenException.class);
@@ -266,7 +291,7 @@ class GameServiceTest {
         Game lobbyGame = gameService.createGame("Alice");
         gameService.joinGame(lobbyGame.getId(), "Bob");
         Game startedGame = gameService.createGame("Carol");
-        gameService.startGame(startedGame.getId(), startedGame.getOrganiserId());
+        gameService.requestStart(startedGame.getId(), startedGame.getOrganiserId());
 
         var joinable = gameService.listJoinableGames();
 

@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { joinGame, quitGame, startGame } from '../api/games'
 import { LobbyView } from '../components/lobby/LobbyView'
 import { PlayView } from '../components/game/PlayView'
 import { ResultsView } from '../components/results/ResultsView'
 import { useGameState } from '../hooks/useGameState'
+import { useStartCountdown } from '../hooks/useStartCountdown'
 import { saveName } from '../utils/cookies'
 import { getStoredPlayerId, storePlayerId } from '../utils/playerIdentity'
+import { playCountdownGoSound } from '../utils/sound'
+import type { GameStatus } from '../types/game'
 
 export function GamePage() {
   const { gameId } = useParams<{ gameId: string }>()
@@ -19,6 +22,18 @@ export function GamePage() {
   const [quitError, setQuitError] = useState<string | null>(null)
 
   const { state, submitGuess, lastFeedback } = useGameState(gameId, meId)
+  const countdownStep = useStartCountdown(state.countdownEndsAt)
+
+  const previousStatusRef = useRef<GameStatus | null>(null)
+  useEffect(() => {
+    // The actual round start is this transition, not any point in the local countdown display -
+    // playing the "go" sound here (rather than at the end of the cosmetic 3-2-1) guarantees every
+    // player hears it exactly when the round truly opens, regardless of their own countdown timing.
+    if (previousStatusRef.current === 'STARTING' && state.status === 'IN_PROGRESS') {
+      playCountdownGoSound()
+    }
+    previousStatusRef.current = state.status
+  }, [state.status])
 
   if (!gameId) {
     return <main className="page">Invalid game link.</main>
@@ -78,7 +93,7 @@ export function GamePage() {
     )
   }
 
-  if (state.status === 'LOBBY') {
+  if (state.status === 'LOBBY' || state.status === 'STARTING') {
     return (
       <main className="page">
         <LobbyView
@@ -93,6 +108,7 @@ export function GamePage() {
           joinError={joinError}
           startBusy={startBusy}
           startError={startError}
+          countdownStep={countdownStep}
         />
       </main>
     )

@@ -10,6 +10,7 @@ export interface GameState {
   organiserId: string | null
   scrambledWord: string | null
   solutionWord: string | null
+  countdownEndsAt: string | null
   endsAt: string | null
   players: PlayerView[]
   yourFoundWords: string[]
@@ -23,6 +24,7 @@ const initialState: GameState = {
   organiserId: null,
   scrambledWord: null,
   solutionWord: null,
+  countdownEndsAt: null,
   endsAt: null,
   players: [],
   yourFoundWords: [],
@@ -48,6 +50,7 @@ export function useGameState(gameId: string | undefined, playerId: string | null
           organiserId: snapshot.organiserId,
           scrambledWord: snapshot.scrambledWord,
           solutionWord: snapshot.solutionWord,
+          countdownEndsAt: snapshot.countdownEndsAt,
           endsAt: snapshot.endsAt,
           players: snapshot.players,
           yourFoundWords: snapshot.yourFoundWords,
@@ -69,12 +72,16 @@ export function useGameState(gameId: string | undefined, playerId: string | null
         case 'PLAYER_JOINED':
           setState((prev) => ({ ...prev, players: event.players }))
           break
+        case 'GAME_STARTING':
+          setState((prev) => ({ ...prev, status: 'STARTING', countdownEndsAt: event.countdownEndsAt }))
+          break
         case 'GAME_STARTED':
           setState((prev) => ({
             ...prev,
             status: 'IN_PROGRESS',
             scrambledWord: event.scrambledWord,
             endsAt: event.endsAt,
+            countdownEndsAt: null,
           }))
           break
         case 'SCORE_UPDATE':

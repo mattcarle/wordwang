@@ -17,6 +17,7 @@ public class Game {
     private String solutionWord;
     private String scrambledWord;
     private Instant startedAt;
+    private Instant countdownEndsAt;
     private Instant endsAt;
     private Instant finishedAt;
 
@@ -68,6 +69,14 @@ public class Game {
 
     public void setStartedAt(Instant startedAt) {
         this.startedAt = startedAt;
+    }
+
+    public Instant getCountdownEndsAt() {
+        return countdownEndsAt;
+    }
+
+    public void setCountdownEndsAt(Instant countdownEndsAt) {
+        this.countdownEndsAt = countdownEndsAt;
     }
 
     public Instant getEndsAt() {

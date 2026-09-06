@@ -5,6 +5,18 @@
   gap: 1.5rem;
 }
 
+.home-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1.75rem;
+}
+
+.tile-display {
+  pointer-events: none;
+}
+
 .tile-row {
   display: flex;
   flex-wrap: wrap;

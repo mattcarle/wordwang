@@ -16,6 +16,7 @@ interface LobbyViewProps {
   joinError?: string | null
   startBusy?: boolean
   startError?: string | null
+  countdownStep?: 3 | 2 | 1 | null
 }
 
 export function LobbyView({
@@ -30,6 +31,7 @@ export function LobbyView({
   joinError,
   startBusy,
   startError,
+  countdownStep,
 }: LobbyViewProps) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const inviteUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/game/${gameId}`
@@ -46,6 +48,7 @@ export function LobbyView({
   }
 
   const isOrganiser = meId === organiserId
+  const isStarting = countdownStep != null
 
   return (
     <div className="lobby-view">
@@ -59,7 +62,9 @@ export function LobbyView({
         <Scoreboard players={players} meId={meId} />
       </div>
 
-      {meId === null && (
+      {meId === null && isStarting && <p className="waiting-message">The game is starting…</p>}
+
+      {meId === null && !isStarting && (
         <NameEntryForm
           label="Your name"
           buttonLabel="Join Game"
@@ -85,13 +90,21 @@ export function LobbyView({
             </p>
           )}
           {startError && <p className="form-error">{startError}</p>}
-          <button type="button" className="btn btn-primary" onClick={onStart} disabled={startBusy}>
-            {startBusy ? 'Starting…' : 'Start Game'}
+          <button type="button" className="btn btn-primary" onClick={onStart} disabled={startBusy || isStarting}>
+            {startBusy || isStarting ? 'Starting…' : 'Start Game'}
           </button>
         </div>
       )}
 
       {meId !== null && !isOrganiser && <p className="waiting-message">Waiting for the game to start…</p>}
+
+      {countdownStep != null && (
+        <div className="countdown-overlay" role="status" aria-live="assertive">
+          <span className="countdown-number" key={countdownStep}>
+            {countdownStep}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

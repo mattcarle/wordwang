@@ -66,13 +66,6 @@ class GameStompIntegrationTest {
 
         postJson("/api/games/" + gameId + "/join", "{\"playerName\":\"Bob\"}");
 
-        String startBody = postJson("/api/games/" + gameId + "/start",
-                "{\"playerId\":\"" + organiserId + "\"}");
-        String scrambledWord = extractString(startBody, "scrambledWord");
-        assertThat(scrambledWord).hasSize(8);
-
-        String guessWord = findValidThreeLetterWord(scrambledWord);
-
         BlockingQueue<String> frames = new LinkedBlockingQueue<>();
 
         StompSession session = stompClient
@@ -91,6 +84,23 @@ class GameStompIntegrationTest {
                 frames.add(new String((byte[]) payload, StandardCharsets.UTF_8));
             }
         });
+
+        String startBody = postJson("/api/games/" + gameId + "/start", "{\"playerId\":\"" + organiserId + "\"}");
+        assertThat(extractString(startBody, "status")).isEqualTo("STARTING");
+        assertThat(startBody).contains("countdownEndsAt");
+
+        String startingFrame = frames.poll(5, TimeUnit.SECONDS);
+        assertThat(startingFrame).isNotNull();
+        assertThat(extractString(startingFrame, "type")).isEqualTo("GAME_STARTING");
+
+        // The organiser-facing countdown plays out over a few real seconds before the round opens.
+        String startedFrame = frames.poll(10, TimeUnit.SECONDS);
+        assertThat(startedFrame).isNotNull();
+        assertThat(extractString(startedFrame, "type")).isEqualTo("GAME_STARTED");
+        String scrambledWord = extractString(startedFrame, "scrambledWord");
+        assertThat(scrambledWord).hasSize(8);
+
+        String guessWord = findValidThreeLetterWord(scrambledWord);
 
         StompHeaders sendHeaders = new StompHeaders();
         sendHeaders.setDestination("/app/game/" + gameId + "/guess");

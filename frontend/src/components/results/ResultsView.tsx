@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Scoreboard } from '../game/Scoreboard'
+import { playApplauseSound, playGameEndSound } from '../../utils/sound'
 import type { PlayerView } from '../../types/game'
 
 interface ResultsViewProps {
@@ -12,6 +14,19 @@ interface ResultsViewProps {
 
 export function ResultsView({ solutionWord, winners, players, meId, yourFoundWords }: ResultsViewProps) {
   const winnerNames = winners.map((w) => w.name).join(' & ')
+  const isWinner = meId !== null && winners.some((w) => w.playerId === meId)
+  const yourScore = players.find((p) => p.playerId === meId)?.score
+  const winningScore = winners[0]?.score
+
+  useEffect(() => {
+    if (isWinner) {
+      playApplauseSound()
+    } else {
+      playGameEndSound()
+    }
+    // Runs once when the results screen first mounts - re-running on prop changes isn't wanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="results-view">
@@ -20,7 +35,17 @@ export function ResultsView({ solutionWord, winners, players, meId, yourFoundWor
       <p className="solution-word">{solutionWord}</p>
       {winnerNames && (
         <p className="winner-announcement">
-          {winners.length > 1 ? `${winnerNames} tie for the win!` : `${winnerNames} wins!`}
+          {isWinner
+            ? 'Congratulations, you win!'
+            : winners.length > 1
+              ? `${winnerNames} tie for the win!`
+              : `${winnerNames} wins!`}
+        </p>
+      )}
+
+      {meId && yourScore !== undefined && winningScore !== undefined && (
+        <p className="score-summary">
+          Your score: <strong>{yourScore}</strong> · Winning score: <strong>{winningScore}</strong>
         </p>
       )}
 

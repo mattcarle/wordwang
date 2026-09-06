@@ -1,4 +1,9 @@
 import wordwangJingleUrl from '../assets/thats-wordwang.m4a'
+import letsPlayJingleUrl from '../assets/lets-play-wordwang2.m4a'
+// Field recording of concert-hall applause (De Doelen, Rotterdam) by Sandermotions on Freesound,
+// mirrored on Wikimedia Commons - CC0 / public domain, no attribution required.
+// https://commons.wikimedia.org/wiki/File:277021_sandermotions_applause-2.wav
+import applauseUrl from '../assets/applause.wav'
 
 let audioCtx: AudioContext | null = null
 
@@ -55,6 +60,49 @@ export function playOpponentScoreSound() {
 export function playWordwangJingle() {
   try {
     void new Audio(wordwangJingleUrl).play()
+  } catch {
+    // ignore playback failures (e.g. autoplay restrictions)
+  }
+}
+
+/**
+ * Nominal length of the "Let's play WordWang!" clip. Used to pace the countdown that follows it -
+ * deliberately not measured via the audio element's own `ended` event, since fetch/decode latency
+ * can make that fire well after the clip has actually finished playing.
+ */
+export const START_JINGLE_DURATION_MS = 1000
+
+/** The organiser just hit Start Game. */
+export function playStartGameJingle() {
+  try {
+    void new Audio(letsPlayJingleUrl).play()
+  } catch {
+    // ignore playback failures (e.g. autoplay restrictions)
+  }
+}
+
+/** One tick ("3", "2", "1") of the pre-game countdown. */
+export function playCountdownTickSound() {
+  playTone(880, 0.18, 'sine', 0, 0.22)
+}
+
+/** The countdown reaching "Go!" as the game begins. */
+export function playCountdownGoSound() {
+  playTone(1046, 0.2, 'sine', 0, 0.25)
+  playTone(1568, 0.35, 'sine', 0.1, 0.2)
+}
+
+/** The round has ended - either the timer ran out or the organiser quit early. */
+export function playGameEndSound() {
+  playTone(880, 0.25, 'sine', 0, 0.22)
+  playTone(660, 0.25, 'sine', 0.18, 0.2)
+  playTone(440, 0.45, 'sine', 0.36, 0.2)
+}
+
+/** You won the game. */
+export function playApplauseSound() {
+  try {
+    void new Audio(applauseUrl).play()
   } catch {
     // ignore playback failures (e.g. autoplay restrictions)
   }

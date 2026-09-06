@@ -5,9 +5,12 @@ import { NameEntryForm } from '../components/shared/NameEntryForm'
 import { getSavedName, saveName } from '../utils/cookies'
 import { storePlayerId } from '../utils/playerIdentity'
 import wordwangPhoto from '../assets/wordwang.jpg'
+import '../styles/tiles.css'
 import type { JoinableGameView } from '../types/game'
 
 type Mode = 'none' | 'new' | 'join'
+
+const WORDWANG_ROWS = ['WORD', 'WANG']
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -67,7 +70,17 @@ export function HomePage() {
   return (
     <main className="home">
       <img src={wordwangPhoto} alt="" className="home-photo" />
-      <h1>Let's Play Wordwang!</h1>
+      <div className="home-wordmark" aria-label="Wordwang" role="img">
+        {WORDWANG_ROWS.map((row) => (
+          <div className="tile-row" key={row}>
+            {row.split('').map((letter, i) => (
+              <span key={i} className="tile tile-display">
+                {letter}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
       <p className="tagline">Two minutes to find as many words as you can.</p>
 
       {mode === 'none' && (
