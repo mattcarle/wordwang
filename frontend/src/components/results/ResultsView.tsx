@@ -74,7 +74,18 @@ export function ResultsView({
     <div className="results-view">
       <h1>Time's up!</h1>
       <p className="solution-reveal">The word was</p>
-      <p className="solution-word">{solutionWord}</p>
+      <p className="solution-word">
+        {solutionWord}{' '}
+        <a
+          className="solution-word-lookup"
+          href={`https://www.dictionary.com/browse/${encodeURIComponent(solutionWord.toLowerCase())}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Look up ${solutionWord} on Dictionary.com`}
+        >
+          🔍
+        </a>
+      </p>
       {winnerNames && (
         <p className="winner-announcement">
           {isWinner

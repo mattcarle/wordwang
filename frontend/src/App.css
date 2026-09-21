@@ -675,6 +675,12 @@ input[type='text']:focus {
   margin: 0 0 1rem;
 }
 
+.solution-word-lookup {
+  font-size: 1.5rem;
+  vertical-align: middle;
+  text-decoration: none;
+}
+
 .winner-announcement {
   font-family: var(--display);
   font-weight: 800;
