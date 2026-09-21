@@ -22,6 +22,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class DictionaryService {
 
     private static final String RESOURCE_PATH = "dictionary/enable1.txt";
+    private static final String EIGHT_LETTER_COMMON_RESOURCE_PATH = "dictionary/eight_letter_common.txt";
     private static final int GAME_WORD_LENGTH = 8;
     private static final int MIN_SCORING_WORD_LENGTH = 3;
     /** Large prime used to scatter consecutive dates across the word list instead of walking it in order. */
@@ -32,32 +33,31 @@ public class DictionaryService {
 
     @PostConstruct
     public void loadDictionary() {
-        Set<String> loadedWords = new HashSet<>();
-        List<String> loadedEightLetterWords = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                new ClassPathResource(RESOURCE_PATH).getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String word = line.trim().toUpperCase(Locale.ROOT);
-                if (word.isEmpty()) {
-                    continue;
-                }
-                loadedWords.add(word);
-                if (word.length() == GAME_WORD_LENGTH) {
-                    loadedEightLetterWords.add(word);
-                }
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load dictionary resource: " + RESOURCE_PATH, e);
-        }
+        List<String> loadedEightLetterWords = readWords(EIGHT_LETTER_COMMON_RESOURCE_PATH);
 
         if (loadedEightLetterWords.isEmpty()) {
             throw new IllegalStateException("Dictionary contains no " + GAME_WORD_LENGTH + "-letter words");
         }
 
-        this.words = Collections.unmodifiableSet(loadedWords);
+        this.words = Collections.unmodifiableSet(new HashSet<>(readWords(RESOURCE_PATH)));
         this.eightLetterWords = Collections.unmodifiableList(loadedEightLetterWords);
+    }
+
+    private static List<String> readWords(String resourcePath) {
+        List<String> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new ClassPathResource(resourcePath).getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String word = line.trim().toUpperCase(Locale.ROOT);
+                if (!word.isEmpty()) {
+                    result.add(word);
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load dictionary resource: " + resourcePath, e);
+        }
+        return result;
     }
 
     public boolean isValidWord(String word) {
