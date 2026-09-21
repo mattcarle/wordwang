@@ -97,6 +97,106 @@
   padding: 0.5rem 0.9rem;
 }
 
+.tile-bank-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+/* The letters always stay on one line at their full size - if the row is too
+   narrow for them plus the shuffle button, the button (not the letters) wraps
+   onto its own line below. */
+.tile-bank-row .tile-row-bank {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+.tile-shuffle-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--tile-bg);
+  color: var(--tile-text);
+  border: 1px solid var(--tile-border);
+  box-shadow: 0 2px 0 var(--tile-shadow);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  padding: 0;
+}
+
+.tile-shuffle-btn:hover:not(:disabled) {
+  transform: translateY(-2px) rotate(25deg);
+  box-shadow: 0 3px 0 var(--tile-shadow);
+}
+
+.tile-shuffle-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--tile-shadow);
+}
+
+.tile-shuffle-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Balatro-style card shuffle: one continuous arc, not a sequence of separate
+   hops. The tile launches already leaning "into" its direction of travel
+   (--shuffle-rot), lifts through the top of an arc, then untilts back to flat
+   as it lands.
+
+   The easing is baked into the keyframe values themselves (an easeInOutQuad
+   sample for how much of --shuffle-dx/--shuffle-rot is left to cover, and a
+   sine hump for the vertical lift), with the animation itself running
+   `linear`. A non-linear timing-function (e.g. ease-in-out) gets re-applied
+   independently to *every* segment between keyframes, so it decelerates to a
+   near-standstill at each internal stop before re-accelerating - barely
+   noticeable for a tile travelling far, but a visible stutter for one only
+   travelling a little, since that dip eats a much bigger share of its
+   already-small motion. Baking the curve into the values instead keeps the
+   same proportional shape - and therefore the same smoothness - regardless
+   of how far any individual tile is travelling. The per-tile --shuffle-*
+   custom properties (the FLIP delta from old to new position) are set inline
+   since every tile travels a different distance. */
+@keyframes tile-shuffle-move {
+  0% {
+    transform: translate(var(--shuffle-dx), var(--shuffle-dy)) rotate(var(--shuffle-rot));
+  }
+  20% {
+    transform: translate(calc(var(--shuffle-dx) * 0.92), calc(var(--shuffle-dy) * 0.92 - 9px))
+      rotate(calc(var(--shuffle-rot) * 0.92));
+  }
+  40% {
+    transform: translate(calc(var(--shuffle-dx) * 0.68), calc(var(--shuffle-dy) * 0.68 - 15px))
+      rotate(calc(var(--shuffle-rot) * 0.68));
+  }
+  60% {
+    transform: translate(calc(var(--shuffle-dx) * 0.32), calc(var(--shuffle-dy) * 0.32 - 15px))
+      rotate(calc(var(--shuffle-rot) * 0.32));
+  }
+  80% {
+    transform: translate(calc(var(--shuffle-dx) * 0.08), calc(var(--shuffle-dy) * 0.08 - 9px))
+      rotate(calc(var(--shuffle-rot) * 0.08));
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+.tile-shuffling {
+  position: relative;
+  z-index: 2;
+  animation: tile-shuffle-move 0.38s linear;
+}
+
 .tile-bottom-actions {
   display: flex;
   gap: 0.75rem;
@@ -158,6 +258,20 @@
   .tile-backspace {
     font-size: 1rem;
     padding: 0.4rem 0.6rem;
+  }
+
+  .tile-bank-row {
+    gap: 0.4rem;
+  }
+
+  .tile-shuffle-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .tile-shuffle-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .tile-bottom-actions {

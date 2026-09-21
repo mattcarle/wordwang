@@ -46,6 +46,8 @@ export interface GameSnapshotResponse {
   players: PlayerView[]
   yourFoundWords: string[]
   winners: PlayerView[]
+  maxPossibleScore: number
+  dailyChallengeDate: string | null
 }
 
 export interface JoinableGameView {
@@ -58,6 +60,7 @@ export interface HighScoreView {
   playerName: string
   score: number
   playedAt: string
+  percentOfMaxPossible: number | null
 }
 
 export interface PlayerJoinedEvent {
@@ -95,6 +98,8 @@ export interface GameEndedEvent {
   solutionWord: string
   winners: PlayerView[]
   players: PlayerView[]
+  maxPossibleScore: number
+  dailyChallengeDate: string | null
 }
 
 export type GameEvent =
@@ -104,3 +109,19 @@ export type GameEvent =
   | ScoreUpdateEvent
   | GuessFeedbackEvent
   | GameEndedEvent
+
+export interface DailyInfoView {
+  date: string
+}
+
+export interface DailyChallengeView {
+  playerName: string
+  score: number
+  percentOfMaxPossible: number | null
+  completedAt: string
+}
+
+export interface DailyHistoryEntryView {
+  date: string
+  solutionWord: string
+}

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,14 @@ public class GameAudit {
     private String gameCode;
     private Instant createdAt;
     private String solutionWord;
+    private Instant startedAt;
+    private Instant finishedAt;
+    /** Nullable: rows written before this field existed have no value to backfill it from. */
+    private Integer maxPossibleScore;
+    /** Null for a normal game; the UTC date of the Daily Wang challenge otherwise. */
+    private LocalDate dailyChallengeDate;
+    /** Nullable for the same reason as maxPossibleScore. True: organiser quit early. False: timer ran out. */
+    private Boolean endedByQuit;
 
     @OneToMany(mappedBy = "gameAudit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlayerAudit> players = new ArrayList<>();
@@ -29,10 +38,16 @@ public class GameAudit {
     protected GameAudit() {
     }
 
-    public GameAudit(String gameCode, Instant createdAt, String solutionWord) {
+    public GameAudit(String gameCode, Instant createdAt, String solutionWord, Instant startedAt, Instant finishedAt,
+                      Integer maxPossibleScore, LocalDate dailyChallengeDate, Boolean endedByQuit) {
         this.gameCode = gameCode;
         this.createdAt = createdAt;
         this.solutionWord = solutionWord;
+        this.startedAt = startedAt;
+        this.finishedAt = finishedAt;
+        this.maxPossibleScore = maxPossibleScore;
+        this.dailyChallengeDate = dailyChallengeDate;
+        this.endedByQuit = endedByQuit;
     }
 
     public void addPlayer(PlayerAudit player) {
@@ -54,6 +69,26 @@ public class GameAudit {
 
     public String getSolutionWord() {
         return solutionWord;
+    }
+
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public Instant getFinishedAt() {
+        return finishedAt;
+    }
+
+    public Integer getMaxPossibleScore() {
+        return maxPossibleScore;
+    }
+
+    public LocalDate getDailyChallengeDate() {
+        return dailyChallengeDate;
+    }
+
+    public Boolean getEndedByQuit() {
+        return endedByQuit;
     }
 
     public List<PlayerAudit> getPlayers() {

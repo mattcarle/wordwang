@@ -1,5 +1,8 @@
 package com.wordwang.game.service;
 
+import com.wordwang.daily.DailyChallengeEntry;
+import com.wordwang.daily.DailyChallengeRepository;
+import com.wordwang.daily.DailyChallengeService;
 import com.wordwang.dictionary.DictionaryService;
 import com.wordwang.game.dto.GameEndResult;
 import com.wordwang.game.dto.GuessSubmissionResult;
@@ -12,8 +15,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -23,17 +29,24 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class GameServiceTest {
 
     private GameService gameService;
+    private DictionaryService dictionaryService;
+    private DailyChallengeRepository dailyChallengeRepository;
 
     @BeforeEach
     void setUp() {
-        DictionaryService dictionaryService = new DictionaryService();
+        dictionaryService = new DictionaryService();
         dictionaryService.loadDictionary();
+        dailyChallengeRepository = mock(DailyChallengeRepository.class);
         gameService = new GameService(dictionaryService, new GameCodeGenerator(),
-                new GuessValidator(dictionaryService, new ScoringService()));
+                new GuessValidator(dictionaryService, new ScoringService()), new ScoringService(),
+                new DailyChallengeService(dailyChallengeRepository));
     }
 
     @Test
@@ -117,6 +130,104 @@ class GameServiceTest {
     }
 
     @Test
+    void dailyGameBeginsRoundWithTodaysDeterministicWordInsteadOfARandomOne() {
+        Game game = gameService.createDailyGame("Alice", UUID.randomUUID(), null);
+        gameService.requestStart(game.getId(), game.getOrganiserId());
+
+        Game started = gameService.beginRound(game.getId());
+
+        assertThat(game.getDailyChallengeDate()).isEqualTo(LocalDate.now(ZoneOffset.UTC));
+        assertThat(started.getSolutionWord()).isEqualTo(dictionaryService.dailyWord(game.getDailyChallengeDate()));
+    }
+
+    @Test
+    void finalizeGameCarriesTheDailyChallengeDateAndPlayerIdThrough() {
+        UUID dailyPlayerId = UUID.randomUUID();
+        Game game = gameService.createDailyGame("Alice", dailyPlayerId, null);
+        gameService.requestStart(game.getId(), game.getOrganiserId());
+        gameService.beginRound(game.getId());
+
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
+
+        assertThat(end.dailyChallengeDate()).isEqualTo(LocalDate.now(ZoneOffset.UTC));
+        assertThat(end.dailyPlayerId()).isEqualTo(dailyPlayerId);
+    }
+
+    @Test
+    void cannotCreateASecondDailyGameForAPlayerIdThatAlreadyCompletedToday() {
+        UUID dailyPlayerId = UUID.randomUUID();
+        when(dailyChallengeRepository.findByChallengeDateAndDailyPlayerId(LocalDate.now(ZoneOffset.UTC), dailyPlayerId))
+                .thenReturn(Optional.of(mock(DailyChallengeEntry.class)));
+
+        assertThatThrownBy(() -> gameService.createDailyGame("Alice", dailyPlayerId, null))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void creatingADailyGameWithNoPlayerIdSkipsTheOncePerDayCheck() {
+        // An unset dailyPlayerId (e.g. an older client) can't be checked against anything, so it
+        // should never be blocked - regardless of what other players have already completed today.
+        when(dailyChallengeRepository.findByChallengeDateAndDailyPlayerId(any(), any()))
+                .thenReturn(Optional.of(mock(DailyChallengeEntry.class)));
+
+        Game game = gameService.createDailyGame("Bob", null, null);
+
+        assertThat(game.getDailyChallengeDate()).isEqualTo(LocalDate.now(ZoneOffset.UTC));
+    }
+
+    @Test
+    void normalGameHasNoDailyChallengeDate() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
+
+        assertThat(end.dailyChallengeDate()).isNull();
+    }
+
+    @Test
+    void finalizeGameDefaultsToNotEndedByQuit() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
+
+        assertThat(end.endedByQuit()).isFalse();
+    }
+
+    @Test
+    void finalizeGameRecordsWhenTheOrganiserQuitEarly() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        GameEndResult end = gameService.finalizeGame(game.getId(), true).orElseThrow();
+
+        assertThat(end.endedByQuit()).isTrue();
+    }
+
+    @Test
+    void finalizeGameCarriesEachPlayersFoundWordsThrough() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "rat");
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "art");
+
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
+
+        assertThat(end.playerAudits()).hasSize(1);
+        assertThat(end.playerAudits().get(0).foundWords()).containsExactly("ART", "RAT"); // sorted
+    }
+
+    @Test
     void cannotBeginARoundThatWasNeverAskedToStart() {
         Game game = gameService.createGame("Alice");
 
@@ -185,6 +296,22 @@ class GameServiceTest {
         assertThat(end.winners()).hasSize(1);
         assertThat(end.winners().get(0).name()).isEqualTo("Alice");
         assertThat(game.getStatus()).isEqualTo(GameStatus.FINISHED);
+    }
+
+    @Test
+    void finalizeGameComputesMaxPossibleScoreFromEveryValidWordInTheSolution() {
+        Game game = gameService.createGame("Alice");
+        game.setScrambledWord("TARDIGEN");
+        game.setSolutionWord("GRADIENT");
+        game.setStatus(GameStatus.IN_PROGRESS);
+
+        gameService.submitGuess(game.getId(), game.getOrganiserId(), "rating"); // 10 points
+
+        GameEndResult end = gameService.finalizeGame(game.getId()).orElseThrow();
+
+        // "GRADIENT" itself (20) plus "RATING" (10) plus every other valid word from those letters -
+        // definitely more than what a single player found this round.
+        assertThat(end.maxPossibleScore()).isGreaterThan(10);
     }
 
     @Test

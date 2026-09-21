@@ -57,6 +57,15 @@ public class GameController {
         return new CreateGameResponse(game.getId(), organiser.getId(), organiser.getName(), game.getStatus());
     }
 
+    @PostMapping("/daily")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CreateGameResponse createDailyGame(@RequestBody CreateGameRequest request, HttpServletRequest httpRequest) {
+        Game game = gameService.createDailyGame(
+                request.organiserName(), request.dailyPlayerId(), httpRequest.getRemoteAddr());
+        Player organiser = game.getPlayer(game.getOrganiserId());
+        return new CreateGameResponse(game.getId(), organiser.getId(), organiser.getName(), game.getStatus());
+    }
+
     @GetMapping("/joinable")
     public List<JoinableGameView> listJoinableGames() {
         return gameService.listJoinableGames();

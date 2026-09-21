@@ -1,5 +1,7 @@
 package com.wordwang.audit;
 
+import java.util.List;
+
 public record AuditPlayerView(
         String name,
         boolean organiser,
@@ -7,7 +9,8 @@ public record AuditPlayerView(
         boolean foundEightLetterWord,
         boolean winner,
         String ipAddress,
-        String location) {
+        String location,
+        List<String> foundWords) {
 
     static AuditPlayerView from(PlayerAudit player) {
         return new AuditPlayerView(
@@ -17,6 +20,7 @@ public record AuditPlayerView(
                 player.isFoundEightLetterWord(),
                 player.isWinner(),
                 player.getIpAddress(),
-                player.getLocation());
+                player.getLocation(),
+                player.getFoundWords());
     }
 }

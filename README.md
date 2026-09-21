@@ -1,6 +1,6 @@
 # WordWang
 
-A real-time word-scramble party game. The server picks a random 8-letter word, scrambles it, and players race the clock to find as many valid words as they can from its letters — solo or with friends.
+A real-time word-scramble party game. The server picks a random 8-letter word, scrambles it, and players race the clock to find as many valid words as they can from its letters — solo, with friends, or in the daily challenge everyone gets the same letters for.
 
 ## How to play
 
@@ -20,7 +20,7 @@ A real-time word-scramble party game. The server picks a random 8-letter word, s
    | 8 letters | 20 |
 
 5. Play alone against the clock, or start a game and invite friends via a shareable link or a 5-digit code — everyone sees live scores as they play.
-6. Whoever has the highest score when the timer runs out wins. Scores are recorded to a persistent high-score table.
+6. Whoever has the highest score when the timer runs out wins. The results screen also shows the maximum score achievable from that round's letters and what percentage of it you found. Scores are recorded to a persistent, browsable high-score table.
 
 ## Tech stack
 
@@ -121,17 +121,18 @@ across updates. Only `docker compose down -v` (or manually removing the volume) 
 
 ```
 src/main/java/com/wordwang/
-  dictionary/    — word list loading, validity checks, scrambling
+  dictionary/    — word list loading, validity checks, scrambling, deterministic daily word
   game/model/    — in-memory Game/Player domain objects
   game/service/  — game lifecycle, scoring, guess validation, scheduled finalization
   game/web/      — REST controller + STOMP message handler
   game/dto/      — request/response and STOMP event records
   highscore/     — persisted high-score entity/repository/service/controller
+  daily/         — Daily Wang: per-day leaderboard/history entity/repository/service/controller
   config/        — WebSocket (STOMP/SockJS) and scheduling config
 
 frontend/src/
-  pages/         — HomePage, HowToPlayPage, GamePage, HighScoresPage
-  components/    — lobby, in-game (tiles/timer/scoreboard), results views
+  pages/         — HomePage, HowToPlayPage, GamePage, HighScoresPage, DailyResultPage
+  components/    — lobby, in-game (tiles/timer/scoreboard), results views, shared score table
   hooks/         — useGameSocket (STOMP), useGameState (snapshot + live events)
   api/           — REST client
   types/         — TypeScript mirrors of backend DTOs/events
@@ -146,3 +147,4 @@ docs/
 - Game state (lobby, scores, timer) lives in memory on the server; only high scores are persisted to the database.
 - The 2-minute round timer is server-authoritative — the server schedules game finalization independently of any client, so the game resolves correctly even in solo play or if players disconnect. The organiser can also end the round early with the "Quit Game" button.
 - The server re-validates every guess (length, available letters, dictionary membership, duplicates) — the client-side tile input is a UX convenience, not the source of truth.
+- Daily Wang's word is derived deterministically from the UTC date, not stored ahead of time, so it's identical for everyone without needing a scheduled job. Its one-attempt-per-day limit is enforced server-side against a persistent anonymous per-browser id, not just client-side state.

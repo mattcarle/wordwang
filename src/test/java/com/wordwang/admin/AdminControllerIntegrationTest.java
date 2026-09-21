@@ -54,7 +54,7 @@ class AdminControllerIntegrationTest {
         assertThat(get("/api/admin/me").statusCode()).isEqualTo(204);
 
         // Setup already logged us in - prove the admin action actually clears real data, not just 204s.
-        highScoreService.recordScore("Alice", 20, "12345");
+        highScoreService.recordScore("Alice", 20, "12345", 100);
         assertThat(highScoreService.getTopScores(20)).isNotEmpty();
         assertThat(delete("/api/admin/highscores").statusCode()).isEqualTo(204);
         assertThat(highScoreService.getTopScores(20)).isEmpty();

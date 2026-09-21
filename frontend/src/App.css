@@ -314,6 +314,33 @@ input[type='text']:focus {
   padding: 0.05rem 0.45rem;
 }
 
+.audit-game-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.audit-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+
+.audit-tag-daily {
+  color: var(--accent-dark);
+  border-color: var(--accent);
+}
+
+.audit-found-words {
+  white-space: normal;
+  min-width: 180px;
+  max-width: 320px;
+}
+
 .audit-pagination {
   display: flex;
   align-items: center;
@@ -344,6 +371,53 @@ input[type='text']:focus {
   display: block;
 }
 
+.highscore-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.1s ease, color 0.1s ease;
+}
+
+.tab-btn-active {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.daily-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.daily-history-list li {
+  margin-bottom: 0.5rem;
+}
+
+.daily-history-row {
+  width: 100%;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  cursor: pointer;
+}
+
 .scoring-table th,
 .scoring-table td,
 .highscore-table th,
@@ -362,6 +436,16 @@ input[type='text']:focus {
   border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1.5rem;
+}
+
+.lobby-view-daily {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.lobby-view-daily .waiting-message {
+  font-style: normal;
+  margin: 0;
 }
 
 .countdown-overlay {
@@ -599,8 +683,20 @@ input[type='text']:focus {
 }
 
 .score-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 0.6rem;
   color: var(--text-muted);
   margin-top: 0.4rem;
+}
+
+.score-summary span {
+  white-space: nowrap;
+}
+
+.score-summary span:not(:first-child)::before {
+  content: '· ';
 }
 
 .score-summary strong {
@@ -608,6 +704,10 @@ input[type='text']:focus {
 }
 
 .final-scores {
+  margin: 1rem 0 1.5rem;
+}
+
+.daily-results-leaderboard {
   margin: 1rem 0 1.5rem;
 }
 

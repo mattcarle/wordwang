@@ -1,6 +1,7 @@
 package com.wordwang.game.service;
 
 import com.wordwang.audit.AuditService;
+import com.wordwang.daily.DailyChallengeService;
 import com.wordwang.game.dto.GameEndedEvent;
 import com.wordwang.game.dto.PlayerView;
 import com.wordwang.highscore.HighScoreService;
@@ -19,22 +20,24 @@ public class GameFinalizerScheduler {
     private final TaskScheduler taskScheduler;
     private final GameService gameService;
     private final HighScoreService highScoreService;
+    private final DailyChallengeService dailyChallengeService;
     private final AuditService auditService;
     private final SimpMessagingTemplate messagingTemplate;
     private final Map<String, ScheduledFuture<?>> scheduledFinalizations = new ConcurrentHashMap<>();
 
     public GameFinalizerScheduler(TaskScheduler taskScheduler, GameService gameService,
-                                   HighScoreService highScoreService, AuditService auditService,
-                                   SimpMessagingTemplate messagingTemplate) {
+                                   HighScoreService highScoreService, DailyChallengeService dailyChallengeService,
+                                   AuditService auditService, SimpMessagingTemplate messagingTemplate) {
         this.taskScheduler = taskScheduler;
         this.gameService = gameService;
         this.highScoreService = highScoreService;
+        this.dailyChallengeService = dailyChallengeService;
         this.auditService = auditService;
         this.messagingTemplate = messagingTemplate;
     }
 
     public void scheduleFinalization(String gameId, Instant endsAt) {
-        ScheduledFuture<?> future = taskScheduler.schedule(() -> finalizeAndBroadcast(gameId), endsAt);
+        ScheduledFuture<?> future = taskScheduler.schedule(() -> finalizeAndBroadcast(gameId, false), endsAt);
         scheduledFinalizations.put(gameId, future);
     }
 
@@ -48,17 +51,25 @@ public class GameFinalizerScheduler {
         if (future != null) {
             future.cancel(false);
         }
-        finalizeAndBroadcast(gameId);
+        finalizeAndBroadcast(gameId, true);
     }
 
-    private void finalizeAndBroadcast(String gameId) {
+    private void finalizeAndBroadcast(String gameId, boolean endedByQuit) {
         scheduledFinalizations.remove(gameId);
-        gameService.finalizeGame(gameId).ifPresent(result -> {
-            for (PlayerView player : result.players()) {
-                highScoreService.recordScore(player.name(), player.score(), gameId);
+        gameService.finalizeGame(gameId, endedByQuit).ifPresent(result -> {
+            if (result.dailyChallengeDate() != null) {
+                for (PlayerView player : result.players()) {
+                    dailyChallengeService.recordCompletion(player.name(), player.score(), result.maxPossibleScore(),
+                            result.dailyChallengeDate(), result.solutionWord(), result.dailyPlayerId());
+                }
+            } else {
+                for (PlayerView player : result.players()) {
+                    highScoreService.recordScore(player.name(), player.score(), gameId, result.maxPossibleScore());
+                }
             }
             auditService.recordGame(result);
-            GameEndedEvent event = new GameEndedEvent(result.solutionWord(), result.winners(), result.players());
+            GameEndedEvent event = new GameEndedEvent(result.solutionWord(), result.winners(), result.players(),
+                    result.maxPossibleScore(), result.dailyChallengeDate());
             messagingTemplate.convertAndSend("/topic/game/" + gameId, event);
         });
     }

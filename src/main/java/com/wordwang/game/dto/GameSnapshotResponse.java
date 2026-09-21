@@ -3,6 +3,7 @@ package com.wordwang.game.dto;
 import com.wordwang.game.model.GameStatus;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,5 +17,7 @@ public record GameSnapshotResponse(
         Instant endsAt,
         List<PlayerView> players,
         List<String> yourFoundWords,
-        List<PlayerView> winners) {
+        List<PlayerView> winners,
+        int maxPossibleScore,
+        LocalDate dailyChallengeDate) {
 }

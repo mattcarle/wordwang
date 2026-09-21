@@ -35,6 +35,15 @@ function shiftDate(dateStr: string, days: number): string {
   return formatDateStr(d)
 }
 
+function formatDuration(startedAt: string | null, finishedAt: string | null): string | null {
+  if (!startedAt || !finishedAt) return null
+  const totalSeconds = Math.round((new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 1000)
+  if (totalSeconds < 0) return null
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
+}
+
 export function AuditTrailPage() {
   const [authState, setAuthState] = useState<AuthState>('loading')
   const [games, setGames] = useState<AuditGameView[]>([])
@@ -144,44 +153,58 @@ export function AuditTrailPage() {
 
       {!loading && games.length > 0 && (
         <div className="audit-games">
-          {games.map((game) => (
-            <div className="audit-game" key={game.gameCode}>
-              <div className="audit-game-header">
-                <span className="audit-game-code">Game {game.gameCode}</span>
-                <span className="audit-game-date">{new Date(game.createdAt).toLocaleString()}</span>
-                <span className="audit-game-word">{game.solutionWord}</span>
-              </div>
-              <div className="audit-players-table-wrap">
-                <table className="audit-players-table">
-                  <thead>
-                    <tr>
-                      <th>Player</th>
-                      <th>Score</th>
-                      <th>Found word</th>
-                      <th>Winner</th>
-                      <th>IP address</th>
-                      <th>Location</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {game.players.map((player) => (
-                      <tr key={player.name}>
-                        <td>
-                          {player.name}
-                          {player.organiser && <span className="audit-organiser-tag">Organiser</span>}
-                        </td>
-                        <td>{player.score}</td>
-                        <td>{player.foundEightLetterWord ? 'Yes' : 'No'}</td>
-                        <td>{player.winner ? 'Yes' : 'No'}</td>
-                        <td>{player.ipAddress ?? 'Unknown'}</td>
-                        <td>{player.location}</td>
+          {games.map((game) => {
+            const duration = formatDuration(game.startedAt, game.finishedAt)
+            return (
+              <div className="audit-game" key={game.gameCode}>
+                <div className="audit-game-header">
+                  <span className="audit-game-code">Game {game.gameCode}</span>
+                  <span className="audit-game-date">{new Date(game.createdAt).toLocaleString()}</span>
+                  <span className="audit-game-word">{game.solutionWord}</span>
+                  {game.dailyChallengeDate && <span className="audit-tag audit-tag-daily">Daily Wang</span>}
+                  {game.endedByQuit && <span className="audit-tag">Ended early</span>}
+                </div>
+                <p className="audit-game-meta">
+                  {game.playerCount} {game.playerCount === 1 ? 'player' : 'players'}
+                  {duration && <> · {duration}</>}
+                  {game.maxPossibleScore !== null && <> · Max possible: {game.maxPossibleScore}</>}
+                </p>
+                <div className="audit-players-table-wrap">
+                  <table className="audit-players-table">
+                    <thead>
+                      <tr>
+                        <th>Player</th>
+                        <th>Score</th>
+                        <th>Found 8-letter word</th>
+                        <th>Words found</th>
+                        <th>Winner</th>
+                        <th>IP address</th>
+                        <th>Location</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {game.players.map((player) => (
+                        <tr key={player.name}>
+                          <td>
+                            {player.name}
+                            {player.organiser && <span className="audit-organiser-tag">Organiser</span>}
+                          </td>
+                          <td>{player.score}</td>
+                          <td>{player.foundEightLetterWord ? 'Yes' : 'No'}</td>
+                          <td className="audit-found-words">
+                            {player.foundWords.length === 0 ? '—' : `${player.foundWords.length}: ${player.foundWords.join(', ')}`}
+                          </td>
+                          <td>{player.winner ? 'Yes' : 'No'}</td>
+                          <td>{player.ipAddress ?? 'Unknown'}</td>
+                          <td>{player.location}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

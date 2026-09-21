@@ -4,6 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { HowToPlayPage } from './pages/HowToPlayPage'
 import { GamePage } from './pages/GamePage'
 import { HighScoresPage } from './pages/HighScoresPage'
+import { DailyResultPage } from './pages/DailyResultPage'
 import { AdminPage } from './pages/AdminPage'
 import { AuditTrailPage } from './pages/AuditTrailPage'
 
@@ -14,6 +15,7 @@ function App() {
       <Route path="/how-to-play" element={<HowToPlayPage />} />
       <Route path="/game/:gameId" element={<GamePage />} />
       <Route path="/highscores" element={<HighScoresPage />} />
+      <Route path="/daily-result" element={<DailyResultPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/audit" element={<AuditTrailPage />} />
     </Routes>

@@ -25,11 +25,14 @@ public class AuditService {
      * request thread, so the geolocation lookups' latency never slows down gameplay.
      */
     public void recordGame(GameEndResult result) {
-        GameAudit audit = new GameAudit(result.gameId(), result.createdAt(), result.solutionWord());
+        GameAudit audit = new GameAudit(result.gameId(), result.createdAt(), result.solutionWord(),
+                result.startedAt(), result.finishedAt(), result.maxPossibleScore(), result.dailyChallengeDate(),
+                result.endedByQuit());
         for (PlayerAuditView player : result.playerAudits()) {
             String location = geolocationService.locate(player.ipAddress());
             audit.addPlayer(new PlayerAudit(player.name(), player.organiser(), player.score(),
-                    player.foundEightLetterWord(), player.winner(), player.ipAddress(), location));
+                    player.foundEightLetterWord(), player.winner(), player.ipAddress(), location,
+                    player.foundWords()));
         }
         repository.save(audit);
     }

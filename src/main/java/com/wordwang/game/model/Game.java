@@ -1,6 +1,7 @@
 package com.wordwang.game.model;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,6 +21,10 @@ public class Game {
     private Instant countdownEndsAt;
     private Instant endsAt;
     private Instant finishedAt;
+    /** Null for a normal game; set to today's (UTC) date for a Daily Wang game. */
+    private LocalDate dailyChallengeDate;
+    /** Null for a normal game; the requesting browser's persistent daily-challenge identity otherwise. */
+    private UUID dailyPlayerId;
 
     public Game(String id, Player organiser) {
         this.id = id;
@@ -114,5 +119,21 @@ public class Game {
     public boolean hasPlayerNamed(String name) {
         return players.values().stream()
                 .anyMatch(p -> p.getName().equalsIgnoreCase(name));
+    }
+
+    public LocalDate getDailyChallengeDate() {
+        return dailyChallengeDate;
+    }
+
+    public void setDailyChallengeDate(LocalDate dailyChallengeDate) {
+        this.dailyChallengeDate = dailyChallengeDate;
+    }
+
+    public UUID getDailyPlayerId() {
+        return dailyPlayerId;
+    }
+
+    public void setDailyPlayerId(UUID dailyPlayerId) {
+        this.dailyPlayerId = dailyPlayerId;
     }
 }

@@ -17,6 +17,7 @@ interface LobbyViewProps {
   startBusy?: boolean
   startError?: string | null
   countdownStep?: 3 | 2 | 1 | null
+  isDaily?: boolean
 }
 
 export function LobbyView({
@@ -32,6 +33,7 @@ export function LobbyView({
   startBusy,
   startError,
   countdownStep,
+  isDaily,
 }: LobbyViewProps) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const inviteUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/game/${gameId}`
@@ -49,6 +51,25 @@ export function LobbyView({
 
   const isOrganiser = meId === organiserId
   const isStarting = countdownStep != null
+
+  // The Daily Wang game is solo and starts itself automatically - there's no room to invite
+  // anyone to and no reason to wait on a "Start Game" click, so skip straight to a plain
+  // "get ready" screen instead of the normal multiplayer lobby.
+  if (isDaily) {
+    return (
+      <div className="lobby-view lobby-view-daily">
+        <h1>Daily Wang</h1>
+        <p className="waiting-message">Get ready…</p>
+        {countdownStep != null && (
+          <div className="countdown-overlay" role="status" aria-live="assertive">
+            <span className="countdown-number" key={countdownStep}>
+              {countdownStep}
+            </span>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="lobby-view">

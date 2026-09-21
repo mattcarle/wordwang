@@ -1,12 +1,11 @@
 package com.wordwang.game.service;
 
 import com.wordwang.dictionary.DictionaryService;
+import com.wordwang.dictionary.LetterMultiset;
 import com.wordwang.game.model.GuessOutcome;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -46,22 +45,6 @@ public class GuessValidator {
     }
 
     private boolean usesOnlyAvailableLetters(String word, String scrambledWord) {
-        Map<Character, Integer> available = letterCounts(scrambledWord);
-        for (char c : word.toCharArray()) {
-            int remaining = available.getOrDefault(c, 0);
-            if (remaining <= 0) {
-                return false;
-            }
-            available.put(c, remaining - 1);
-        }
-        return true;
-    }
-
-    private Map<Character, Integer> letterCounts(String word) {
-        Map<Character, Integer> counts = new HashMap<>();
-        for (char c : word.toUpperCase(Locale.ROOT).toCharArray()) {
-            counts.merge(c, 1, Integer::sum);
-        }
-        return counts;
+        return LetterMultiset.isSubsetOf(word, LetterMultiset.counts(scrambledWord));
     }
 }

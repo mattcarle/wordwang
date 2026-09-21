@@ -33,12 +33,13 @@ class AuditServiceTest {
 
     private GameEndResult resultFor(String gameId, Instant createdAt) {
         List<PlayerAuditView> playerAudits = List.of(
-                new PlayerAuditView("Alice", true, 20, true, true, "127.0.0.1"),
-                new PlayerAuditView("Bob", false, 5, false, false, null));
+                new PlayerAuditView("Alice", true, 20, true, true, "127.0.0.1", List.of("GRADIENT", "RATING")),
+                new PlayerAuditView("Bob", false, 5, false, false, null, List.of()));
         List<PlayerView> players = List.of(
                 new PlayerView(UUID.randomUUID(), "Alice", 20),
                 new PlayerView(UUID.randomUUID(), "Bob", 5));
-        return new GameEndResult(gameId, createdAt, "GRADIENT", players.subList(0, 1), players, playerAudits);
+        return new GameEndResult(gameId, createdAt, "GRADIENT", players.subList(0, 1), players, playerAudits, 100,
+                null, null, createdAt, createdAt.plusSeconds(120), false);
     }
 
     @Test
@@ -52,6 +53,12 @@ class AuditServiceTest {
         assertThat(audit.getSolutionWord()).isEqualTo("GRADIENT");
         assertThat(audit.getPlayers()).hasSize(2);
 
+        assertThat(audit.getStartedAt()).isNotNull();
+        assertThat(audit.getFinishedAt()).isEqualTo(audit.getStartedAt().plusSeconds(120));
+        assertThat(audit.getMaxPossibleScore()).isEqualTo(100);
+        assertThat(audit.getDailyChallengeDate()).isNull();
+        assertThat(audit.getEndedByQuit()).isFalse();
+
         PlayerAudit alice = audit.getPlayers().stream().filter(p -> p.getPlayerName().equals("Alice")).findFirst().orElseThrow();
         assertThat(alice.isOrganiser()).isTrue();
         assertThat(alice.getScore()).isEqualTo(20);
@@ -59,10 +66,12 @@ class AuditServiceTest {
         assertThat(alice.isWinner()).isTrue();
         assertThat(alice.getIpAddress()).isEqualTo("127.0.0.1");
         assertThat(alice.getLocation()).isEqualTo("Unknown");
+        assertThat(alice.getFoundWords()).containsExactly("GRADIENT", "RATING");
 
         PlayerAudit bob = audit.getPlayers().stream().filter(p -> p.getPlayerName().equals("Bob")).findFirst().orElseThrow();
         assertThat(bob.getIpAddress()).isNull();
         assertThat(bob.getLocation()).isEqualTo("Unknown");
+        assertThat(bob.getFoundWords()).isEmpty();
     }
 
     @Test
@@ -95,11 +104,15 @@ class AuditServiceTest {
 
         AuditGameView view = auditService.search(null, null, 0, 20).games().get(0);
 
+        assertThat(view.playerCount()).isEqualTo(2);
+        assertThat(view.maxPossibleScore()).isEqualTo(100);
+        assertThat(view.endedByQuit()).isFalse();
         assertThat(view.players()).hasSize(2);
         AuditPlayerView alice = view.players().stream().filter(p -> p.name().equals("Alice")).findFirst().orElseThrow();
         assertThat(alice.organiser()).isTrue();
         assertThat(alice.winner()).isTrue();
         assertThat(alice.foundEightLetterWord()).isTrue();
         assertThat(alice.score()).isEqualTo(20);
+        assertThat(alice.foundWords()).containsExactly("GRADIENT", "RATING");
     }
 }

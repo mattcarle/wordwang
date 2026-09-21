@@ -109,6 +109,7 @@ export function GamePage() {
           startBusy={startBusy}
           startError={startError}
           countdownStep={countdownStep}
+          isDaily={state.dailyChallengeDate !== null}
         />
       </main>
     )
@@ -143,6 +144,8 @@ export function GamePage() {
           players={state.players}
           meId={meId}
           yourFoundWords={state.yourFoundWords}
+          maxPossibleScore={state.maxPossibleScore}
+          dailyChallengeDate={state.dailyChallengeDate}
         />
       </main>
     )

@@ -1,14 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { createGame, getJoinableGames, joinGame } from '../api/games'
+import { createGame, getJoinableGames, joinGame, startGame } from '../api/games'
+import { createDailyGame, getDailyInfo } from '../api/daily'
 import { NameEntryForm } from '../components/shared/NameEntryForm'
 import { getSavedName, saveName } from '../utils/cookies'
+import { getDailyCompletion } from '../utils/dailyCompletion'
+import { getOrCreateDailyPlayerId } from '../utils/dailyPlayerIdentity'
 import { storePlayerId } from '../utils/playerIdentity'
 import wordwangPhoto from '../assets/wordwang.jpg'
 import '../styles/tiles.css'
 import type { JoinableGameView } from '../types/game'
 
-type Mode = 'none' | 'new' | 'join'
+type Mode = 'none' | 'new' | 'join' | 'daily'
+type DailyStatus = 'loading' | 'available' | 'completed'
 
 const WORDWANG_ROWS = ['WORD', 'WANG']
 
@@ -20,6 +24,16 @@ export function HomePage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [joinableGames, setJoinableGames] = useState<JoinableGameView[] | null>(null)
+  const [dailyStatus, setDailyStatus] = useState<DailyStatus>('loading')
+
+  useEffect(() => {
+    getDailyInfo()
+      .then((info) => {
+        const completion = getDailyCompletion()
+        setDailyStatus(completion?.date === info.date ? 'completed' : 'available')
+      })
+      .catch(() => setDailyStatus('available'))
+  }, [])
 
   async function handleNewGame(name: string) {
     setBusy(true)
@@ -32,6 +46,34 @@ export function HomePage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create game')
       setBusy(false)
+    }
+  }
+
+  async function handlePlayDaily(name: string) {
+    setBusy(true)
+    setError(null)
+    try {
+      saveName(name)
+      const game = await createDailyGame(name, getOrCreateDailyPlayerId())
+      storePlayerId(game.gameId, game.organiserId)
+      await startGame(game.gameId, game.organiserId)
+      navigate(`/game/${game.gameId}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start the Daily Wang')
+      setBusy(false)
+    }
+  }
+
+  function handleDailyClick() {
+    if (dailyStatus === 'completed') {
+      navigate('/daily-result')
+      return
+    }
+    const savedName = getSavedName()
+    if (savedName) {
+      handlePlayDaily(savedName)
+    } else {
+      setMode('daily')
     }
   }
 
@@ -85,13 +127,25 @@ export function HomePage() {
 
       {mode === 'none' && (
         <div className="home-actions">
-          <button type="button" className="btn btn-primary" onClick={() => setMode('new')}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleDailyClick}
+            disabled={dailyStatus === 'loading'}
+          >
+            {dailyStatus === 'completed' ? 'Daily Wang ✓' : 'Daily Wang'}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={() => setMode('new')}>
             New Game
           </button>
           <button type="button" className="btn btn-secondary" onClick={handleShowJoin}>
             Join Game
           </button>
           <div className="home-links-row">
+            <Link to="/highscores" className="link">
+              Leaderboard
+            </Link>
+            <span className="home-links-sep">|</span>
             <Link to="/how-to-play" className="link">
               How to Play
             </Link>
@@ -109,6 +163,17 @@ export function HomePage() {
           label="Your name"
           buttonLabel="Create Game"
           onSubmit={handleNewGame}
+          busy={busy}
+          error={error}
+        />
+      )}
+
+      {mode === 'daily' && (
+        <NameEntryForm
+          initialName={getSavedName()}
+          label="Your name"
+          buttonLabel="Play Daily Wang"
+          onSubmit={handlePlayDaily}
           busy={busy}
           error={error}
         />

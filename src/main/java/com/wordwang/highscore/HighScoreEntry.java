@@ -18,15 +18,18 @@ public class HighScoreEntry {
     private int score;
     private Instant playedAt;
     private String gameId;
+    /** Nullable: entries recorded before this field existed have no value to backfill it from. */
+    private Integer maxPossibleScore;
 
     protected HighScoreEntry() {
     }
 
-    public HighScoreEntry(String playerName, int score, Instant playedAt, String gameId) {
+    public HighScoreEntry(String playerName, int score, Instant playedAt, String gameId, Integer maxPossibleScore) {
         this.playerName = playerName;
         this.score = score;
         this.playedAt = playedAt;
         this.gameId = gameId;
+        this.maxPossibleScore = maxPossibleScore;
     }
 
     public Long getId() {
@@ -47,5 +50,9 @@ public class HighScoreEntry {
 
     public String getGameId() {
         return gameId;
+    }
+
+    public Integer getMaxPossibleScore() {
+        return maxPossibleScore;
     }
 }

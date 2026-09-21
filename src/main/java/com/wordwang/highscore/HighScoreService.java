@@ -15,8 +15,8 @@ public class HighScoreService {
         this.repository = repository;
     }
 
-    public void recordScore(String playerName, int score, String gameId) {
-        repository.save(new HighScoreEntry(playerName, score, Instant.now(), gameId));
+    public void recordScore(String playerName, int score, String gameId, Integer maxPossibleScore) {
+        repository.save(new HighScoreEntry(playerName, score, Instant.now(), gameId, maxPossibleScore));
     }
 
     public List<HighScoreEntry> getTopScores(int limit) {
