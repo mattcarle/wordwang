@@ -8,6 +8,7 @@ interface TileInputProps {
 }
 
 const SHUFFLE_ANIMATION_MS = 380
+const MAX_SHUFFLES = 5
 
 function shuffledCopy<T>(items: T[]): T[] {
   const copy = [...items]
@@ -30,11 +31,13 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
   const [order, setOrder] = useState<number[]>(() => tiles.map((_, i) => i))
   const [shuffleAnim, setShuffleAnim] = useState<Record<number, ShuffleVars> | null>(null)
   const [isShuffling, setIsShuffling] = useState(false)
+  const [shuffleCount, setShuffleCount] = useState(0)
   const bankTileRefs = useRef<Record<number, HTMLButtonElement | null>>({})
   const shuffleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setOrder(tiles.map((_, i) => i))
+    setShuffleCount(0)
     // Only the letter set identifies a new round - re-deriving `tiles` every render isn't wanted here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [letters])
@@ -68,7 +71,7 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
   }
 
   function shuffle() {
-    if (disabled || isShuffling || order.length < 2) return
+    if (disabled || isShuffling || order.length < 2 || shuffleCount >= MAX_SHUFFLES) return
 
     const before: Record<number, DOMRect> = {}
     order.forEach((tileIndex) => {
@@ -83,6 +86,7 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
 
     setIsShuffling(true)
     setOrder(next)
+    setShuffleCount((prev) => prev + 1)
 
     requestAnimationFrame(() => {
       const vars: Record<number, ShuffleVars> = {}
@@ -204,9 +208,9 @@ export function TileInput({ letters, onSubmit, disabled }: TileInputProps) {
           type="button"
           className="tile-shuffle-btn"
           onClick={shuffle}
-          disabled={disabled || isShuffling}
+          disabled={disabled || isShuffling || shuffleCount >= MAX_SHUFFLES}
           aria-label="Shuffle letters"
-          title="Shuffle letters"
+          title={shuffleCount >= MAX_SHUFFLES ? 'No shuffles left' : 'Shuffle letters'}
         >
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
             <path

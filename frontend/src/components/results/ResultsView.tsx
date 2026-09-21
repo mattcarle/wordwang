@@ -30,8 +30,6 @@ export function ResultsView({
   const isWinner = meId !== null && winners.some((w) => w.playerId === meId)
   const yourScore = players.find((p) => p.playerId === meId)?.score
   const winningScore = winners[0]?.score
-  const yourPercentOfMax =
-    yourScore !== undefined && maxPossibleScore > 0 ? Math.round((yourScore / maxPossibleScore) * 100) : undefined
 
   const [dailyLeaderboard, setDailyLeaderboard] = useState<ScoreTableRow[] | null>(null)
 
@@ -98,11 +96,6 @@ export function ResultsView({
           <span>
             Max possible: <strong>{maxPossibleScore}</strong>
           </span>
-          {yourPercentOfMax !== undefined && (
-            <span>
-              Percent of possible points earned: <strong>{yourPercentOfMax}%</strong>
-            </span>
-          )}
         </p>
       )}
 
