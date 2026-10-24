@@ -1,6 +1,9 @@
 package com.wordwang.highscore;
 
-import org.springframework.data.domain.PageRequest;
+import com.wordwang.leaderboard.Leaderboard;
+import com.wordwang.leaderboard.LeaderboardCandidate;
+import com.wordwang.leaderboard.LeaderboardPageView;
+import com.wordwang.leaderboard.LeaderboardQuery;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -19,8 +22,12 @@ public class HighScoreService {
         repository.save(new HighScoreEntry(playerName, score, Instant.now(), gameId, maxPossibleScore));
     }
 
-    public List<HighScoreEntry> getTopScores(int limit) {
-        return repository.findAllByOrderByScoreDesc(PageRequest.of(0, limit));
+    public LeaderboardPageView getLeaderboard(LeaderboardQuery query) {
+        List<LeaderboardCandidate> candidates = repository.findAll().stream()
+                .map(e -> LeaderboardCandidate.of(e.getPlayerName(), e.getScore(), e.getMaxPossibleScore(),
+                        e.getPlayedAt()))
+                .toList();
+        return Leaderboard.page(candidates, query);
     }
 
     public void clearAll() {

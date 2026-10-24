@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Scoreboard } from '../game/Scoreboard'
-import { ScoreTable, type ScoreTableRow } from '../shared/ScoreTable'
+import { LeaderboardTable } from '../shared/LeaderboardTable'
 import { getDailyLeaderboard } from '../../api/daily'
 import { saveDailyCompletion } from '../../utils/dailyCompletion'
 import { playApplauseSound, playGameEndSound } from '../../utils/sound'
@@ -31,8 +31,6 @@ export function ResultsView({
   const yourScore = players.find((p) => p.playerId === meId)?.score
   const winningScore = winners[0]?.score
 
-  const [dailyLeaderboard, setDailyLeaderboard] = useState<ScoreTableRow[] | null>(null)
-
   useEffect(() => {
     if (isWinner) {
       playApplauseSound()
@@ -54,18 +52,6 @@ export function ResultsView({
       foundWords: yourFoundWords,
     })
 
-    getDailyLeaderboard(dailyChallengeDate)
-      .then((entries) =>
-        setDailyLeaderboard(
-          entries.map((entry) => ({
-            playerName: entry.playerName,
-            score: entry.score,
-            percentOfMaxPossible: entry.percentOfMaxPossible,
-            date: entry.completedAt,
-          })),
-        ),
-      )
-      .catch(() => setDailyLeaderboard([]))
     // Only needs to run once, when a daily game's result screen first mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyChallengeDate])
@@ -124,7 +110,10 @@ export function ResultsView({
       {dailyChallengeDate && (
         <div className="daily-results-leaderboard">
           <h2>Today's Daily Leaderboard</h2>
-          {dailyLeaderboard === null ? <p>Loading…</p> : <ScoreTable rows={dailyLeaderboard} />}
+          <LeaderboardTable
+            load={(query) => getDailyLeaderboard(dailyChallengeDate, query)}
+            uniquePlayers={false}
+          />
         </div>
       )}
 
