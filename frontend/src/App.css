@@ -699,6 +699,11 @@ input[type='text']:focus {
   margin-top: 1.5rem;
 }
 
+.rank-message {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
 .link-button {
   background: none;
   border: none;

@@ -30,6 +30,28 @@ class LeaderboardTest {
     }
 
     @Test
+    void rankOfMatchesPageRankingIncludingTiesAndPercentTieBreaks() {
+        LeaderboardCandidate best = entry("Alice", 50, 100, 0);
+        LeaderboardCandidate tiedA = entry("Bob", 30, 100, 1);
+        LeaderboardCandidate tiedB = entry("Cara", 30, 100, 2);
+        LeaderboardCandidate sameScoreHigherPercent = entry("Dan", 30, 60, 3);
+        LeaderboardCandidate noPercent = entry("Eve", 30, null, 4);
+        LeaderboardCandidate last = entry("Finn", 10, 100, 5);
+        List<LeaderboardCandidate> all =
+                List.of(best, tiedA, tiedB, sameScoreHigherPercent, noPercent, last);
+
+        assertThat(Leaderboard.rankOf(all, best)).isEqualTo(1);
+        assertThat(Leaderboard.rankOf(all, sameScoreHigherPercent)).isEqualTo(2);
+        assertThat(Leaderboard.rankOf(all, tiedA)).isEqualTo(3);
+        assertThat(Leaderboard.rankOf(all, tiedB)).isEqualTo(3);
+        assertThat(Leaderboard.rankOf(all, noPercent)).isEqualTo(5);
+        assertThat(Leaderboard.rankOf(all, last)).isEqualTo(6);
+
+        // Same ranks as the paged leaderboard shows for the same entries.
+        assertThat(ranks(page(all, "rank", "asc", false, 0, 20))).containsExactly(1, 2, 3, 3, 5, 6);
+    }
+
+    @Test
     void computesPercentOfMaxPossibleScore() {
         assertThat(LeaderboardCandidate.of("Alice", 25, 100, T0).percentOfMaxPossible()).isEqualTo(25);
     }

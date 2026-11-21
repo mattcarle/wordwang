@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.OptionalInt;
 
 @Service
 public class HighScoreService {
@@ -28,6 +29,25 @@ public class HighScoreService {
                         e.getPlayedAt()))
                 .toList();
         return Leaderboard.page(candidates, query);
+    }
+
+    /**
+     * Where the score {@code playerName} recorded in {@code gameId} sits on the all-time board (every
+     * score counts, repeat players included), or empty if no such score was recorded.
+     */
+    public OptionalInt rankOf(String gameId, String playerName) {
+        List<HighScoreEntry> entries = repository.findAll();
+        return entries.stream()
+                .filter(e -> gameId.equals(e.getGameId()) && e.getPlayerName().equalsIgnoreCase(playerName))
+                .findFirst()
+                .map(e -> OptionalInt.of(Leaderboard.rankOf(
+                        entries.stream()
+                                .map(x -> LeaderboardCandidate.of(
+                                        x.getPlayerName(), x.getScore(), x.getMaxPossibleScore(), x.getPlayedAt()))
+                                .toList(),
+                        LeaderboardCandidate.of(
+                                e.getPlayerName(), e.getScore(), e.getMaxPossibleScore(), e.getPlayedAt()))))
+                .orElse(OptionalInt.empty());
     }
 
     public void clearAll() {

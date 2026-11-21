@@ -4,6 +4,7 @@ import { Scoreboard } from '../game/Scoreboard'
 import { LeaderboardTable } from '../shared/LeaderboardTable'
 import { getDailyLeaderboard } from '../../api/daily'
 import { getPossibleWords } from '../../api/games'
+import { getHighScoreRank } from '../../api/highscores'
 import { saveDailyCompletion } from '../../utils/dailyCompletion'
 import { playApplauseSound, playGameEndSound } from '../../utils/sound'
 import type { PlayerView, PossibleWordsGroup } from '../../types/game'
@@ -19,6 +20,22 @@ interface ResultsViewProps {
   maxPossibleScore: number
   dailyChallengeDate?: string | null
   singlePlayer?: boolean
+}
+
+/** 1 -> "1st", 2 -> "2nd", 3 -> "3rd", 11 -> "11th", 123 -> "123rd". */
+function ordinal(n: number): string {
+  const lastTwo = n % 100
+  if (lastTwo >= 11 && lastTwo <= 13) return `${n}th`
+  switch (n % 10) {
+    case 1:
+      return `${n}st`
+    case 2:
+      return `${n}nd`
+    case 3:
+      return `${n}rd`
+    default:
+      return `${n}th`
+  }
 }
 
 export function ResultsView({
@@ -38,6 +55,25 @@ export function ResultsView({
   const isWinner = meId !== null && winners.some((w) => w.playerId === meId)
   const yourScore = players.find((p) => p.playerId === meId)?.score
   const winningScore = winners[0]?.score
+
+  // All-time leaderboard position for this game's score. Daily Wang scores live on the daily board
+  // instead, and a score of 0 isn't worth boasting about, so neither gets a message.
+  const yourName = players.find((p) => p.playerId === meId)?.name
+  const [allTimeRank, setAllTimeRank] = useState<number | null>(null)
+  useEffect(() => {
+    if (!gameId || !yourName || !yourScore || dailyChallengeDate) return
+    let cancelled = false
+    getHighScoreRank(gameId, yourName)
+      .then((rank) => {
+        if (!cancelled) setAllTimeRank(rank)
+      })
+      .catch(() => {
+        // No message if the rank can't be worked out.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [gameId, yourName, yourScore, dailyChallengeDate])
 
   const [showPossible, setShowPossible] = useState(false)
   const [possibleWords, setPossibleWords] = useState<PossibleWordsGroup[] | null>(null)
@@ -126,6 +162,14 @@ export function ResultsView({
               Winning score: <strong>{winningScore}</strong>
             </span>
           )}
+        </p>
+      )}
+
+      {allTimeRank !== null && (
+        <p className="rank-message">
+          {allTimeRank === 1
+            ? 'Your score was the highest score of all time!'
+            : `Your score was the ${ordinal(allTimeRank)} highest score of all time!`}
         </p>
       )}
 

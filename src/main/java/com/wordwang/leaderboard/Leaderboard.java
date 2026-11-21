@@ -44,6 +44,29 @@ public final class Leaderboard {
         return new LeaderboardPageView(List.copyOf(sorted.subList(from, to)), to < sorted.size());
     }
 
+    /**
+     * The rank {@code target} holds among {@code all} (which must include it), using the same
+     * competition ranking as {@link #page}: one more than the number of entries that beat it, so
+     * ties share a rank. An entry beats another with a higher score, or an equal score and a higher
+     * percent of max (no percent counts as lowest).
+     */
+    public static int rankOf(List<LeaderboardCandidate> all, LeaderboardCandidate target) {
+        long better = all.stream().filter(c -> beats(c, target)).count();
+        return (int) better + 1;
+    }
+
+    private static boolean beats(LeaderboardCandidate a, LeaderboardCandidate b) {
+        if (a.score() != b.score()) {
+            return a.score() > b.score();
+        }
+        Integer pa = a.percentOfMaxPossible();
+        Integer pb = b.percentOfMaxPossible();
+        if (pa == null) {
+            return false;
+        }
+        return pb == null || pa > pb;
+    }
+
     /** Players are identified by name, ignoring case and surrounding spaces - names are all there is. */
     private static List<LeaderboardCandidate> bestEntryPerPlayer(List<LeaderboardCandidate> ordered) {
         Set<String> seen = new HashSet<>();
