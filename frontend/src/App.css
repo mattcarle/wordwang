@@ -41,6 +41,10 @@
   margin-top: 0.75rem;
 }
 
+.more-wang-option {
+  margin-bottom: 0;
+}
+
 .home-links-row {
   display: flex;
   align-items: center;

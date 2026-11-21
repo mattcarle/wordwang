@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public record GameSnapshotResponse(
         String gameId,
+        String name,
+        boolean singlePlayer,
         GameStatus status,
         UUID organiserId,
         String scrambledWord,

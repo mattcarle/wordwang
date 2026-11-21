@@ -37,6 +37,8 @@ export interface GameSummaryResponse {
 
 export interface GameSnapshotResponse {
   gameId: string
+  name: string
+  singlePlayer: boolean
   status: GameStatus
   organiserId: string
   scrambledWord: string | null
@@ -52,6 +54,7 @@ export interface GameSnapshotResponse {
 
 export interface JoinableGameView {
   gameId: string
+  name: string
   organiserName: string
   playerCount: number
 }

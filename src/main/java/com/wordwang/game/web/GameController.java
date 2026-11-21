@@ -52,7 +52,9 @@ public class GameController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateGameResponse createGame(@RequestBody CreateGameRequest request, HttpServletRequest httpRequest) {
-        Game game = gameService.createGame(request.organiserName(), httpRequest.getRemoteAddr());
+        Game game = gameService.createGame(
+                request.organiserName(), httpRequest.getRemoteAddr(), Boolean.TRUE.equals(request.singlePlayer()));
+        broadcastJoinableGames();
         Player organiser = game.getPlayer(game.getOrganiserId());
         return new CreateGameResponse(game.getId(), organiser.getId(), organiser.getName(), game.getStatus());
     }
@@ -62,6 +64,7 @@ public class GameController {
     public CreateGameResponse createDailyGame(@RequestBody CreateGameRequest request, HttpServletRequest httpRequest) {
         Game game = gameService.createDailyGame(
                 request.organiserName(), request.dailyPlayerId(), httpRequest.getRemoteAddr());
+        broadcastJoinableGames();
         Player organiser = game.getPlayer(game.getOrganiserId());
         return new CreateGameResponse(game.getId(), organiser.getId(), organiser.getName(), game.getStatus());
     }
@@ -88,6 +91,7 @@ public class GameController {
         Player joined = gameService.joinGame(gameId, request.playerName(), httpRequest.getRemoteAddr());
         GameSummaryResponse summary = gameService.getSummary(gameId);
         messagingTemplate.convertAndSend("/topic/game/" + gameId, new PlayerJoinedEvent(summary.players()));
+        broadcastJoinableGames();
         return new JoinGameResponse(gameId, joined.getId(), summary.status(), summary.players());
     }
 
@@ -96,6 +100,7 @@ public class GameController {
         Game game = gameService.requestStart(gameId, request.playerId());
         messagingTemplate.convertAndSend("/topic/game/" + gameId, new GameStartingEvent(game.getCountdownEndsAt()));
         gameStartScheduler.scheduleRoundStart(gameId, game.getCountdownEndsAt());
+        broadcastJoinableGames();
         return new StartGameResponse(gameId, game.getStatus(), game.getCountdownEndsAt());
     }
 
@@ -104,5 +109,11 @@ public class GameController {
     public void quit(@PathVariable String gameId, @RequestBody QuitGameRequest request) {
         gameService.requestQuit(gameId, request.playerId());
         gameFinalizerScheduler.finalizeNow(gameId);
+        broadcastJoinableGames();
+    }
+
+    /** Pushes the current list of joinable (lobby) games to everyone watching the Multiplayer screen. */
+    private void broadcastJoinableGames() {
+        messagingTemplate.convertAndSend("/topic/joinable-games", gameService.listJoinableGames());
     }
 }

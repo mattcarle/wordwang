@@ -98,7 +98,8 @@ export function GamePage() {
       <main className="page">
         <LobbyView
           gameId={gameId}
-          organiserName={state.players.find((p) => p.playerId === state.organiserId)?.name ?? ''}
+          gameName={state.name}
+          singlePlayer={state.singlePlayer}
           organiserId={state.organiserId ?? ''}
           players={state.players}
           meId={meId}

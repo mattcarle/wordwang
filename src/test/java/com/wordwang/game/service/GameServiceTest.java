@@ -50,6 +50,22 @@ class GameServiceTest {
     }
 
     @Test
+    void gameNamesAreNumberedWhenTheSamePlayerHasAnotherActiveGame() {
+        Game first = gameService.createGame("Matt");
+        Game second = gameService.createGame("matt");
+        Game third = gameService.createGame("Matt");
+        Game other = gameService.createGame("Alice");
+
+        assertThat(first.getName()).isEqualTo("Matt's Game");
+        assertThat(second.getName()).isEqualTo("matt's Game 2");
+        assertThat(third.getName()).isEqualTo("Matt's Game 3");
+        assertThat(other.getName()).isEqualTo("Alice's Game");
+
+        first.setStatus(GameStatus.FINISHED);
+        assertThat(gameService.createGame("Matt").getName()).isEqualTo("Matt's Game");
+    }
+
+    @Test
     void createGameStartsInLobbyWithOrganiserAsSoleMember() {
         Game game = gameService.createGame("Alice");
 

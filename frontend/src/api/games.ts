@@ -8,8 +8,8 @@ import type {
   StartGameResponse,
 } from '../types/game'
 
-export function createGame(organiserName: string): Promise<CreateGameResponse> {
-  return post<CreateGameResponse>('/api/games', { organiserName })
+export function createGame(organiserName: string, singlePlayer = false): Promise<CreateGameResponse> {
+  return post<CreateGameResponse>('/api/games', { organiserName, singlePlayer })
 }
 
 export function getJoinableGames(): Promise<JoinableGameView[]> {

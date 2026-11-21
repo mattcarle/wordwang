@@ -11,6 +11,9 @@ public class Game {
 
     private final String id;
     private final UUID organiserId;
+    private volatile String name;
+    /** True for a solo game started straight away from the Single Player button; never joinable by others. */
+    private volatile boolean singlePlayer;
     private final Instant createdAt = Instant.now();
     private final Map<UUID, Player> players = new LinkedHashMap<>();
 
@@ -34,6 +37,23 @@ public class Game {
 
     public String getId() {
         return id;
+    }
+
+    /** Display name, e.g. "Matt's Game" or "Matt's Game 2"; assigned by the service when the game is created. */
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isSinglePlayer() {
+        return singlePlayer;
+    }
+
+    public void setSinglePlayer(boolean singlePlayer) {
+        this.singlePlayer = singlePlayer;
     }
 
     public UUID getOrganiserId() {

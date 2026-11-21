@@ -6,6 +6,8 @@ import type { GameEvent, GameStatus, GuessFeedbackEvent, PlayerView } from '../t
 export interface GameState {
   loading: boolean
   error: string | null
+  name: string
+  singlePlayer: boolean
   status: GameStatus | null
   organiserId: string | null
   scrambledWord: string | null
@@ -22,6 +24,8 @@ export interface GameState {
 const initialState: GameState = {
   loading: true,
   error: null,
+  name: '',
+  singlePlayer: false,
   status: null,
   organiserId: null,
   scrambledWord: null,
@@ -50,6 +54,8 @@ export function useGameState(gameId: string | undefined, playerId: string | null
         setState({
           loading: false,
           error: null,
+          name: snapshot.name,
+          singlePlayer: snapshot.singlePlayer,
           status: snapshot.status,
           organiserId: snapshot.organiserId,
           scrambledWord: snapshot.scrambledWord,

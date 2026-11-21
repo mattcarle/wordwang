@@ -66,12 +66,41 @@ public class GameService {
     }
 
     public Game createGame(String organiserName, String organiserIp) {
+        return createGame(organiserName, organiserIp, false);
+    }
+
+    /**
+     * A single-player game is started immediately by its creator and is never offered for others to
+     * join, so it is left out of the joinable list and doesn't take up a "Matt's Game" name.
+     */
+    public Game createGame(String organiserName, String organiserIp, boolean singlePlayer) {
         String name = requireValidName(organiserName);
         Player organiser = new Player(UUID.randomUUID(), name, organiserIp);
         String gameId = gameCodeGenerator.generate(games::containsKey);
         Game game = new Game(gameId, organiser);
+        game.setSinglePlayer(singlePlayer);
+        game.setName(uniqueGameName(name));
         games.put(gameId, game);
         return game;
+    }
+
+    /**
+     * "Matt's Game", or "Matt's Game 2", "Matt's Game 3"... if a game with that name is still
+     * active (not yet finished). The lowest free number is used.
+     */
+    private String uniqueGameName(String organiserName) {
+        Set<String> taken = games.values().stream()
+                .filter(g -> g.getStatus() != GameStatus.FINISHED && !g.isSinglePlayer())
+                .map(Game::getName)
+                .filter(n -> n != null)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+        String base = organiserName + "'s Game";
+        String candidate = base;
+        for (int n = 2; taken.contains(candidate.toLowerCase()); n++) {
+            candidate = base + " " + n;
+        }
+        return candidate;
     }
 
     /**
@@ -233,6 +262,8 @@ public class GameService {
             int maxPossibleScore = finished ? computeMaxPossibleScore(solutionWord) : 0;
             return new GameSnapshotResponse(
                     game.getId(),
+                    game.getName(),
+                    game.isSinglePlayer(),
                     game.getStatus(),
                     game.getOrganiserId(),
                     game.getScrambledWord(),
@@ -249,14 +280,15 @@ public class GameService {
 
     public List<JoinableGameView> listJoinableGames() {
         return games.values().stream()
-                .filter(game -> game.getStatus() == GameStatus.LOBBY)
+                .filter(game -> game.getStatus() == GameStatus.LOBBY && !game.isSinglePlayer())
                 .sorted(Comparator.comparing(Game::getCreatedAt).reversed())
                 .limit(20)
                 .map(game -> {
                     synchronized (game) {
                         Player organiser = game.getPlayer(game.getOrganiserId());
                         String organiserName = organiser == null ? "" : organiser.getName();
-                        return new JoinableGameView(game.getId(), organiserName, game.playerList().size());
+                        return new JoinableGameView(
+                                game.getId(), game.getName(), organiserName, game.playerList().size());
                     }
                 })
                 .toList();
