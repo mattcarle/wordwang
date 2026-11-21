@@ -10,6 +10,7 @@ import com.wordwang.game.dto.GuessSubmissionResult;
 import com.wordwang.game.dto.JoinableGameView;
 import com.wordwang.game.dto.PlayerAuditView;
 import com.wordwang.game.dto.PlayerView;
+import com.wordwang.game.dto.PossibleWordsGroup;
 import com.wordwang.game.model.Game;
 import com.wordwang.game.model.GameStatus;
 import com.wordwang.game.model.Player;
@@ -308,6 +309,34 @@ public class GameService {
                 return false;
             }
         });
+    }
+
+    /**
+     * All scoring words (3+ letters) that can be made from a finished round's letters, grouped by
+     * length (longest first) with each group alphabetical. Only available once the round is over so it
+     * can't be used to cheat.
+     */
+    public List<PossibleWordsGroup> getPossibleWords(String gameId) {
+        Game game = requireGame(gameId);
+        String solutionWord;
+        synchronized (game) {
+            if (game.getStatus() != GameStatus.FINISHED) {
+                throw new IllegalStateException("Game " + gameId + " is not finished");
+            }
+            solutionWord = game.getSolutionWord();
+        }
+        if (solutionWord == null) {
+            return List.of();
+        }
+        return dictionaryService.wordsUsingLetters(solutionWord).stream()
+                .collect(Collectors.groupingBy(String::length))
+                .entrySet().stream()
+                .sorted(Map.Entry.<Integer, List<String>>comparingByKey().reversed())
+                .map(e -> new PossibleWordsGroup(
+                        e.getKey(),
+                        scoringService.scoreFor(e.getKey()),
+                        e.getValue().stream().sorted().toList()))
+                .toList();
     }
 
     private int computeMaxPossibleScore(String solutionWord) {

@@ -8,6 +8,7 @@ import com.wordwang.game.dto.GameSummaryResponse;
 import com.wordwang.game.dto.JoinGameRequest;
 import com.wordwang.game.dto.JoinGameResponse;
 import com.wordwang.game.dto.JoinableGameView;
+import com.wordwang.game.dto.PossibleWordsGroup;
 import com.wordwang.game.dto.PlayerJoinedEvent;
 import com.wordwang.game.dto.QuitGameRequest;
 import com.wordwang.game.dto.StartGameRequest;
@@ -83,6 +84,11 @@ public class GameController {
     public GameSnapshotResponse getSnapshot(@PathVariable String gameId,
                                              @RequestParam(required = false) UUID playerId) {
         return gameService.getSnapshot(gameId, playerId);
+    }
+
+    @GetMapping("/{gameId}/possible-words")
+    public List<PossibleWordsGroup> getPossibleWords(@PathVariable String gameId) {
+        return gameService.getPossibleWords(gameId);
     }
 
     @PostMapping("/{gameId}/join")

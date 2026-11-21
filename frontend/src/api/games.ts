@@ -5,8 +5,13 @@ import type {
   GameSummaryResponse,
   JoinableGameView,
   JoinGameResponse,
+  PossibleWordsGroup,
   StartGameResponse,
 } from '../types/game'
+
+export function getPossibleWords(gameId: string): Promise<PossibleWordsGroup[]> {
+  return get<PossibleWordsGroup[]>(`/api/games/${gameId}/possible-words`)
+}
 
 export function createGame(organiserName: string, singlePlayer = false): Promise<CreateGameResponse> {
   return post<CreateGameResponse>('/api/games', { organiserName, singlePlayer })

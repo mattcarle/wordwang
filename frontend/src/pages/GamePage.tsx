@@ -140,6 +140,7 @@ export function GamePage() {
     return (
       <main className="page">
         <ResultsView
+          gameId={gameId}
           solutionWord={state.solutionWord}
           winners={state.winners}
           players={state.players}

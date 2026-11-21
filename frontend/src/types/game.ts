@@ -52,6 +52,12 @@ export interface GameSnapshotResponse {
   dailyChallengeDate: string | null
 }
 
+export interface PossibleWordsGroup {
+  length: number
+  pointsPerWord: number
+  words: string[]
+}
+
 export interface JoinableGameView {
   gameId: string
   name: string

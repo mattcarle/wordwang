@@ -1,13 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Scoreboard } from '../game/Scoreboard'
 import { LeaderboardTable } from '../shared/LeaderboardTable'
 import { getDailyLeaderboard } from '../../api/daily'
+import { getPossibleWords } from '../../api/games'
 import { saveDailyCompletion } from '../../utils/dailyCompletion'
 import { playApplauseSound, playGameEndSound } from '../../utils/sound'
-import type { PlayerView } from '../../types/game'
+import type { PlayerView, PossibleWordsGroup } from '../../types/game'
 
 interface ResultsViewProps {
+  /** Needed to look up the possible words; without it (e.g. a saved daily result) the number isn't a link. */
+  gameId?: string
   solutionWord: string
   winners: PlayerView[]
   players: PlayerView[]
@@ -19,6 +22,7 @@ interface ResultsViewProps {
 }
 
 export function ResultsView({
+  gameId,
   solutionWord,
   winners,
   players,
@@ -34,6 +38,24 @@ export function ResultsView({
   const isWinner = meId !== null && winners.some((w) => w.playerId === meId)
   const yourScore = players.find((p) => p.playerId === meId)?.score
   const winningScore = winners[0]?.score
+
+  const [showPossible, setShowPossible] = useState(false)
+  const [possibleWords, setPossibleWords] = useState<PossibleWordsGroup[] | null>(null)
+  const [possibleError, setPossibleError] = useState<string | null>(null)
+
+  function togglePossibleWords() {
+    const next = !showPossible
+    setShowPossible(next)
+    if (next && possibleWords === null && gameId) {
+      setPossibleError(null)
+      getPossibleWords(gameId)
+        .then(setPossibleWords)
+        .catch((err) => setPossibleError(err instanceof Error ? err.message : 'Failed to load possible words'))
+    }
+  }
+
+  const totalPossibleWords = possibleWords?.reduce((sum, g) => sum + g.words.length, 0) ?? 0
+  const totalPossiblePoints = possibleWords?.reduce((sum, g) => sum + g.words.length * g.pointsPerWord, 0) ?? 0
 
   useEffect(() => {
     if (isWinner) {
@@ -89,16 +111,21 @@ export function ResultsView({
       {meId && yourScore !== undefined && winningScore !== undefined && (
         <p className="score-summary">
           <span>
-            Your score: <strong>{yourScore}</strong>
+            Your score: <strong>{yourScore}</strong> (out of a possible{' '}
+            {gameId ? (
+              <button type="button" className="link-button" onClick={togglePossibleWords} aria-expanded={showPossible}>
+                {maxPossibleScore}
+              </button>
+            ) : (
+              maxPossibleScore
+            )}
+            )
           </span>
           {!isSolo && (
             <span>
               Winning score: <strong>{winningScore}</strong>
             </span>
           )}
-          <span>
-            Max possible: <strong>{maxPossibleScore}</strong>
-          </span>
         </p>
       )}
 
@@ -110,6 +137,35 @@ export function ResultsView({
               <li key={word}>{word}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {showPossible && (
+        <div className="possible-words">
+          {possibleError ? (
+            <p className="form-error">{possibleError}</p>
+          ) : possibleWords === null ? (
+            <p>Loading…</p>
+          ) : (
+            <>
+              <h2>
+                All Possible Words ({totalPossibleWords} words for {totalPossiblePoints} points)
+              </h2>
+              {possibleWords.map((group) => (
+                <div key={group.length} className="possible-words-group found-words">
+                  <h3>
+                    {group.length} letter words ({group.words.length} x {group.pointsPerWord} ={' '}
+                    {group.words.length * group.pointsPerWord} points)
+                  </h3>
+                  <ul>
+                    {group.words.map((word) => (
+                      <li key={word}>{word}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
 
