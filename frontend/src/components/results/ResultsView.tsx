@@ -15,6 +15,7 @@ interface ResultsViewProps {
   yourFoundWords: string[]
   maxPossibleScore: number
   dailyChallengeDate?: string | null
+  singlePlayer?: boolean
 }
 
 export function ResultsView({
@@ -25,7 +26,10 @@ export function ResultsView({
   yourFoundWords,
   maxPossibleScore,
   dailyChallengeDate,
+  singlePlayer,
 }: ResultsViewProps) {
+  // "Winning score" is just your own score when playing solo (single player or the Daily Wang).
+  const isSolo = singlePlayer || !!dailyChallengeDate
   const winnerNames = winners.map((w) => w.name).join(' & ')
   const isWinner = meId !== null && winners.some((w) => w.playerId === meId)
   const yourScore = players.find((p) => p.playerId === meId)?.score
@@ -87,9 +91,11 @@ export function ResultsView({
           <span>
             Your score: <strong>{yourScore}</strong>
           </span>
-          <span>
-            Winning score: <strong>{winningScore}</strong>
-          </span>
+          {!isSolo && (
+            <span>
+              Winning score: <strong>{winningScore}</strong>
+            </span>
+          )}
           <span>
             Max possible: <strong>{maxPossibleScore}</strong>
           </span>
@@ -124,7 +130,7 @@ export function ResultsView({
 
       <div className="results-actions">
         <Link to={dailyChallengeDate ? '/highscores?tab=daily' : '/highscores'} className="link">
-          View High Scores
+          View Leaderboard
         </Link>
         <Link to="/" className="link">
             ← Back to Home

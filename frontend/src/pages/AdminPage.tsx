@@ -74,16 +74,16 @@ export function AdminPage() {
   }
 
   async function handleClearHighScores() {
-    if (!window.confirm('Are you sure you want to clear the high score table? This cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to clear the leaderboard? This cannot be undone.')) {
       return
     }
     setBusy(true)
     setClearStatus(null)
     try {
       await clearHighScores()
-      setClearStatus('High score table cleared.')
+      setClearStatus('Leaderboard cleared.')
     } catch (err) {
-      setClearStatus(err instanceof Error ? err.message : 'Failed to clear high scores')
+      setClearStatus(err instanceof Error ? err.message : 'Failed to clear leaderboard')
     } finally {
       setBusy(false)
     }
@@ -161,7 +161,7 @@ export function AdminPage() {
     <main className="page">
       <h1>Admin</h1>
       <button type="button" className="btn btn-secondary" onClick={handleClearHighScores} disabled={busy}>
-        Clear High Score Table
+        Clear Leaderboard
       </button>
       {clearStatus && <p className="form-success">{clearStatus}</p>}
 

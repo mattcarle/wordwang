@@ -50,7 +50,7 @@ export function HighScoresPage() {
 
   return (
     <main className="page">
-      <h1>High Scores</h1>
+      <h1>Leaderboard</h1>
 
       <div className="highscore-tabs">
         <button type="button" className={`tab-btn${tab === 'all-time' ? ' tab-btn-active' : ''}`} onClick={() => setTab('all-time')}>

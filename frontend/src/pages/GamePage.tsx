@@ -147,6 +147,7 @@ export function GamePage() {
           yourFoundWords={state.yourFoundWords}
           maxPossibleScore={state.maxPossibleScore}
           dailyChallengeDate={state.dailyChallengeDate}
+          singlePlayer={state.singlePlayer}
         />
       </main>
     )
