@@ -24,7 +24,7 @@ A real-time word-scramble party game. The server picks a random 8-letter word, s
 
 ## Tech stack
 
-- **Backend**: Java 21, Spring Boot (WebMVC + WebSocket/STOMP + Data JPA), H2 (file-based)
+- **Backend**: Java 25, Spring Boot (WebMVC + WebSocket/STOMP + Data JPA), H2 (file-based)
 - **Frontend**: React 19, TypeScript, Vite, React Router, `@stomp/stompjs` over SockJS
 - **Dictionary**: [ENABLE1](https://github.com/dolph/dictionary) word list (public domain), bundled at `src/main/resources/dictionary/enable1.txt`
 

@@ -1,7 +1,7 @@
 # Backend image: builds the Spring Boot jar, then runs it on a slim JRE. Runs on plain HTTP -
 # see docker-compose.yml, TLS is terminated by the caddy service in front of this one.
 
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 # Cache dependencies in their own layer, so a source-only change doesn't re-download the world.
@@ -12,7 +12,7 @@ RUN chmod +x mvnw && ./mvnw -B dependency:go-offline
 COPY src ./src
 RUN ./mvnw -B clean package -DskipTests
 
-FROM eclipse-temurin:21-jre AS runtime
+FROM eclipse-temurin:25-jre AS runtime
 WORKDIR /app
 
 RUN useradd --system --create-home --home-dir /app appuser \
