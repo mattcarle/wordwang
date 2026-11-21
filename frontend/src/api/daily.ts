@@ -1,14 +1,22 @@
 import { get, post } from './client'
-import type { CreateGameResponse, DailyChallengeView, DailyHistoryEntryView, DailyInfoView } from '../types/game'
+import { leaderboardParams } from './highscores'
+import type {
+  CreateGameResponse,
+  DailyHistoryEntryView,
+  DailyInfoView,
+  LeaderboardPageView,
+  LeaderboardQuery,
+} from '../types/game'
 
 export function getDailyInfo(): Promise<DailyInfoView> {
   return get<DailyInfoView>('/api/daily')
 }
 
-export function getDailyLeaderboard(date?: string, limit = 20): Promise<DailyChallengeView[]> {
-  const params = new URLSearchParams({ limit: String(limit) })
+/** Omitting `date` means today's (UTC) Daily Wang. */
+export function getDailyLeaderboard(date: string | undefined, query: LeaderboardQuery): Promise<LeaderboardPageView> {
+  const params = leaderboardParams(query)
   if (date) params.set('date', date)
-  return get<DailyChallengeView[]>(`/api/daily/leaderboard?${params}`)
+  return get<LeaderboardPageView>(`/api/daily/leaderboard?${params}`)
 }
 
 export function getDailyHistory(limit = 30): Promise<DailyHistoryEntryView[]> {

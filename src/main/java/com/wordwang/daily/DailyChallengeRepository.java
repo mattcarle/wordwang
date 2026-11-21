@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public interface DailyChallengeRepository extends JpaRepository<DailyChallengeEntry, Long> {
 
-    List<DailyChallengeEntry> findByChallengeDateOrderByScoreDesc(LocalDate challengeDate, Pageable pageable);
+    List<DailyChallengeEntry> findByChallengeDate(LocalDate challengeDate);
 
     Optional<DailyChallengeEntry> findByChallengeDateAndDailyPlayerId(LocalDate challengeDate, UUID dailyPlayerId);
 

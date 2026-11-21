@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getHighScores } from '../api/highscores'
 import { getDailyHistory, getDailyLeaderboard } from '../api/daily'
-import { ScoreTable, type ScoreTableRow } from '../components/shared/ScoreTable'
-import type { DailyChallengeView, DailyHistoryEntryView, HighScoreView } from '../types/game'
+import { LeaderboardTable } from '../components/shared/LeaderboardTable'
+import type { DailyHistoryEntryView, LeaderboardQuery } from '../types/game'
 
 type Tab = 'all-time' | 'daily' | 'previous'
 
@@ -11,22 +11,16 @@ function isTab(value: string | null): value is Tab {
   return value === 'all-time' || value === 'daily' || value === 'previous'
 }
 
-function highScoreRows(scores: HighScoreView[]): ScoreTableRow[] {
-  return scores.map((s) => ({
-    playerName: s.playerName,
-    score: s.score,
-    percentOfMaxPossible: s.percentOfMaxPossible,
-    date: s.playedAt,
-  }))
+function getTodaysDailyLeaderboard(query: LeaderboardQuery) {
+  return getDailyLeaderboard(undefined, query)
 }
 
-function dailyRows(scores: DailyChallengeView[]): ScoreTableRow[] {
-  return scores.map((s) => ({
-    playerName: s.playerName,
-    score: s.score,
-    percentOfMaxPossible: s.percentOfMaxPossible,
-    date: s.completedAt,
-  }))
+/**
+ * Daily dates are plain UTC calendar days ("2026-10-23"). `new Date("2026-10-23")` would parse
+ * that as UTC midnight and show the previous day anywhere west of UTC, so read it as local midnight.
+ */
+function formatChallengeDate(date: string): string {
+  return new Date(`${date}T00:00:00`).toLocaleDateString()
 }
 
 export function HighScoresPage() {
@@ -35,42 +29,24 @@ export function HighScoresPage() {
     const requested = searchParams.get('tab')
     return isTab(requested) ? requested : 'all-time'
   })
+  const [allowRepeatPlayers, setAllowRepeatPlayers] = useState(true)
 
-  const [allTimeScores, setAllTimeScores] = useState<HighScoreView[] | null>(null)
-  const [dailyScores, setDailyScores] = useState<DailyChallengeView[] | null>(null)
   const [history, setHistory] = useState<DailyHistoryEntryView[] | null>(null)
-  const [expanded, setExpanded] = useState<{ date: string; scores: DailyChallengeView[] | null } | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [expandedDate, setExpandedDate] = useState<string | null>(null)
 
   useEffect(() => {
-    setError(null)
-    if (tab === 'all-time' && allTimeScores === null) {
-      getHighScores(20).then(setAllTimeScores).catch(reportError)
-    }
-    if (tab === 'daily' && dailyScores === null) {
-      getDailyLeaderboard().then(setDailyScores).catch(reportError)
-    }
     if (tab === 'previous' && history === null) {
-      getDailyHistory().then(setHistory).catch(reportError)
+      setHistoryError(null)
+      getDailyHistory()
+        .then(setHistory)
+        .catch((err) => setHistoryError(err instanceof Error ? err.message : 'Failed to load previous dailies'))
     }
-    // Only the active tab should trigger its own (once-only) fetch.
+    // Only fetched once, the first time the tab is opened.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab])
 
-  function reportError(err: unknown) {
-    setError(err instanceof Error ? err.message : 'Failed to load scores')
-  }
-
-  function togglePreviousDay(date: string) {
-    if (expanded?.date === date) {
-      setExpanded(null)
-      return
-    }
-    setExpanded({ date, scores: null })
-    getDailyLeaderboard(date)
-      .then((scores) => setExpanded({ date, scores }))
-      .catch(reportError)
-  }
+  const uniquePlayers = !allowRepeatPlayers
 
   return (
     <main className="page">
@@ -88,25 +64,30 @@ export function HighScoresPage() {
         </button>
       </div>
 
-      {error && <p className="form-error">{error}</p>}
+      <label className="leaderboard-option">
+        <input
+          type="checkbox"
+          checked={allowRepeatPlayers}
+          onChange={(e) => setAllowRepeatPlayers(e.target.checked)}
+        />
+        Allow the same player to appear more than once
+      </label>
 
-      {tab === 'all-time' && !error && (
-        allTimeScores === null ? <p>Loading…</p> : <ScoreTable rows={highScoreRows(allTimeScores)} />
+      {tab === 'all-time' && <LeaderboardTable key="all-time" load={getHighScores} uniquePlayers={uniquePlayers} />}
+
+      {tab === 'daily' && (
+        <LeaderboardTable
+          key="daily"
+          load={getTodaysDailyLeaderboard}
+          uniquePlayers={uniquePlayers}
+          emptyMessage="No one has finished today's Daily Wang yet — be the first!"
+        />
       )}
 
-      {tab === 'daily' && !error && (
-        dailyScores === null ? (
-          <p>Loading…</p>
-        ) : (
-          <ScoreTable
-            rows={dailyRows(dailyScores)}
-            emptyMessage="No one has finished today's Daily Wang yet — be the first!"
-          />
-        )
-      )}
-
-      {tab === 'previous' && !error && (
-        history === null ? (
+      {tab === 'previous' && (
+        historyError ? (
+          <p className="form-error">{historyError}</p>
+        ) : history === null ? (
           <p>Loading…</p>
         ) : history.length === 0 ? (
           <p>No previous dailies yet.</p>
@@ -114,11 +95,19 @@ export function HighScoresPage() {
           <ul className="daily-history-list">
             {history.map((entry) => (
               <li key={entry.date}>
-                <button type="button" className="daily-history-row" onClick={() => togglePreviousDay(entry.date)}>
-                  {new Date(entry.date).toLocaleDateString()} — {entry.solutionWord}
+                <button
+                  type="button"
+                  className="daily-history-row"
+                  onClick={() => setExpandedDate(expandedDate === entry.date ? null : entry.date)}
+                >
+                  {formatChallengeDate(entry.date)} — {entry.solutionWord}
                 </button>
-                {expanded?.date === entry.date && (
-                  expanded.scores === null ? <p>Loading…</p> : <ScoreTable rows={dailyRows(expanded.scores)} />
+                {expandedDate === entry.date && (
+                  <LeaderboardTable
+                    key={entry.date}
+                    load={(query) => getDailyLeaderboard(entry.date, query)}
+                    uniquePlayers={uniquePlayers}
+                  />
                 )}
               </li>
             ))}

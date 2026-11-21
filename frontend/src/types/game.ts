@@ -56,11 +56,30 @@ export interface JoinableGameView {
   playerCount: number
 }
 
-export interface HighScoreView {
+export type LeaderboardSort = 'rank' | 'player' | 'score' | 'percent' | 'date'
+
+export type SortDirection = 'asc' | 'desc'
+
+export interface LeaderboardQuery {
+  sort: LeaderboardSort
+  direction: SortDirection
+  uniquePlayers: boolean
+  offset: number
+  limit: number
+}
+
+export interface LeaderboardEntryView {
+  /** Shared by tied entries (1, 1, 3) and unaffected by which column the page is sorted by. */
+  rank: number
   playerName: string
   score: number
-  playedAt: string
   percentOfMaxPossible: number | null
+  date: string
+}
+
+export interface LeaderboardPageView {
+  entries: LeaderboardEntryView[]
+  hasMore: boolean
 }
 
 export interface PlayerJoinedEvent {
@@ -112,13 +131,6 @@ export type GameEvent =
 
 export interface DailyInfoView {
   date: string
-}
-
-export interface DailyChallengeView {
-  playerName: string
-  score: number
-  percentOfMaxPossible: number | null
-  completedAt: string
 }
 
 export interface DailyHistoryEntryView {

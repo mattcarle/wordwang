@@ -72,6 +72,27 @@ class DailyChallengeControllerIntegrationTest {
         assertThat(response.body()).contains("Bob").contains("\"percentOfMaxPossible\":40");
     }
 
+    @Test
+    void leaderboardPagesAndCanShowEachPlayerOnlyOnce() throws Exception {
+        LocalDate date = LocalDate.now(ZoneOffset.UTC).minusDays(2);
+        repository.save(new DailyChallengeEntry(date, "RAWHIDED", "Carol", 60, 100, Instant.now()));
+        repository.save(new DailyChallengeEntry(date, "RAWHIDED", "Carol", 30, 100, Instant.now()));
+        repository.save(new DailyChallengeEntry(date, "RAWHIDED", "Dave", 50, 100, Instant.now()));
+
+        HttpResponse<String> firstPage = get("/api/daily/leaderboard?date=" + date + "&limit=2");
+        HttpResponse<String> unique = get("/api/daily/leaderboard?date=" + date + "&uniquePlayers=true");
+
+        assertThat(firstPage.statusCode()).isEqualTo(200);
+        assertThat(firstPage.body()).contains("\"hasMore\":true").contains("Carol").contains("Dave")
+                .doesNotContain("\"score\":30");
+        assertThat(unique.body()).contains("\"hasMore\":false").contains("\"score\":60").doesNotContain("\"score\":30");
+    }
+
+    @Test
+    void leaderboardRejectsAnUnknownSort() throws Exception {
+        assertThat(get("/api/daily/leaderboard?sort=nonsense").statusCode()).isEqualTo(400);
+    }
+
     private HttpResponse<String> get(String path) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + path))

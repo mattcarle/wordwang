@@ -1,5 +1,9 @@
 package com.wordwang.daily;
 
+import com.wordwang.leaderboard.Leaderboard;
+import com.wordwang.leaderboard.LeaderboardCandidate;
+import com.wordwang.leaderboard.LeaderboardPageView;
+import com.wordwang.leaderboard.LeaderboardQuery;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -34,10 +38,12 @@ public class DailyChallengeService {
                 challengeDate, solutionWord, playerName, score, maxPossibleScore, Instant.now(), dailyPlayerId));
     }
 
-    public List<DailyChallengeView> getLeaderboard(LocalDate date, int limit) {
-        return repository.findByChallengeDateOrderByScoreDesc(date, PageRequest.of(0, limit)).stream()
-                .map(DailyChallengeView::from)
+    public LeaderboardPageView getLeaderboard(LocalDate date, LeaderboardQuery query) {
+        List<LeaderboardCandidate> candidates = repository.findByChallengeDate(date).stream()
+                .map(e -> LeaderboardCandidate.of(e.getPlayerName(), e.getScore(), e.getMaxPossibleScore(),
+                        e.getCompletedAt()))
                 .toList();
+        return Leaderboard.page(candidates, query);
     }
 
     public List<DailyHistoryEntryView> getHistory(int limit) {

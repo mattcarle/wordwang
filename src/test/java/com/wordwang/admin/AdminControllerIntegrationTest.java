@@ -1,6 +1,7 @@
 package com.wordwang.admin;
 
 import com.wordwang.highscore.HighScoreService;
+import com.wordwang.leaderboard.LeaderboardQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,9 +56,9 @@ class AdminControllerIntegrationTest {
 
         // Setup already logged us in - prove the admin action actually clears real data, not just 204s.
         highScoreService.recordScore("Alice", 20, "12345", 100);
-        assertThat(highScoreService.getTopScores(20)).isNotEmpty();
+        assertThat(highScoreService.getLeaderboard(LeaderboardQuery.firstPage(20)).entries()).isNotEmpty();
         assertThat(delete("/api/admin/highscores").statusCode()).isEqualTo(204);
-        assertThat(highScoreService.getTopScores(20)).isEmpty();
+        assertThat(highScoreService.getLeaderboard(LeaderboardQuery.firstPage(20)).entries()).isEmpty();
 
         assertThat(postJson("/api/admin/setup", "{\"password\":\"another-one\"}").statusCode()).isEqualTo(409);
 

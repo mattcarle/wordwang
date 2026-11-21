@@ -1,5 +1,7 @@
 package com.wordwang.daily;
 
+import com.wordwang.leaderboard.LeaderboardPageView;
+import com.wordwang.leaderboard.LeaderboardQuery;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,10 +26,15 @@ public class DailyChallengeController {
     }
 
     @GetMapping("/leaderboard")
-    public List<DailyChallengeView> leaderboard(@RequestParam(required = false) LocalDate date,
-                                                 @RequestParam(defaultValue = "20") int limit) {
+    public LeaderboardPageView leaderboard(@RequestParam(required = false) LocalDate date,
+                                           @RequestParam(defaultValue = "rank") String sort,
+                                           @RequestParam(defaultValue = "asc") String direction,
+                                           @RequestParam(defaultValue = "false") boolean uniquePlayers,
+                                           @RequestParam(defaultValue = "0") int offset,
+                                           @RequestParam(defaultValue = "20") int limit) {
         LocalDate challengeDate = date != null ? date : dailyChallengeService.today();
-        return dailyChallengeService.getLeaderboard(challengeDate, limit);
+        return dailyChallengeService.getLeaderboard(challengeDate,
+                LeaderboardQuery.fromParams(sort, direction, uniquePlayers, offset, limit));
     }
 
     @GetMapping("/history")
