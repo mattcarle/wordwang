@@ -52,6 +52,44 @@ class LeaderboardTest {
     }
 
     @Test
+    void groupedByPlayerEntriesCarryTheirTotalGameCountAndCanBeSortedByIt() {
+        List<LeaderboardCandidate> all = List.of(
+                entry("Alice", 40, 100, 0),
+                entry("alice ", 10, 100, 1),
+                entry("Alice", 20, 100, 2),
+                entry("Bob", 30, 100, 3),
+                entry("Cara", 5, 100, 4),
+                entry("cara", 6, 100, 5));
+
+        LeaderboardPageView grouped = page(all, "rank", "asc", true, 0, 20);
+        assertThat(names(grouped)).containsExactly("Alice", "Bob", "cara");
+        assertThat(grouped.entries().stream().map(LeaderboardEntryView::gameCount).toList())
+                .containsExactly(3, 1, 2);
+
+        assertThat(names(page(all, "count", "desc", true, 0, 20))).containsExactly("Alice", "cara", "Bob");
+
+        // Not grouped: no counts.
+        assertThat(page(all, "rank", "asc", false, 0, 20).entries())
+                .allSatisfy(e -> assertThat(e.gameCount()).isNull());
+    }
+
+    @Test
+    void dailyScoresAreFlaggedAndRankedAlongsideNormalOnes() {
+        LeaderboardCandidate normalBest = entry("Alice", 50, 100, 0);
+        LeaderboardCandidate daily = LeaderboardCandidate.of("Bob", 40, 100, T0.plusSeconds(60), true);
+        LeaderboardCandidate normalLow = entry("Cara", 20, 100, 2);
+        List<LeaderboardCandidate> all = List.of(normalLow, daily, normalBest);
+
+        LeaderboardPageView byRank = page(all, "rank", "asc", false, 0, 20);
+        assertThat(names(byRank)).containsExactly("Alice", "Bob", "Cara");
+        assertThat(byRank.entries().stream().map(LeaderboardEntryView::daily).toList())
+                .containsExactly(false, true, false);
+        assertThat(Leaderboard.rankOf(all, normalLow)).isEqualTo(3);
+
+        assertThat(names(page(all, "daily", "desc", false, 0, 20))).startsWith("Bob");
+    }
+
+    @Test
     void computesPercentOfMaxPossibleScore() {
         assertThat(LeaderboardCandidate.of("Alice", 25, 100, T0).percentOfMaxPossible()).isEqualTo(25);
     }

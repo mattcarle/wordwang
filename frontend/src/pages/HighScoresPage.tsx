@@ -73,7 +73,7 @@ export function HighScoresPage() {
         Group by Player
       </label>
 
-      {tab === 'all-time' && <LeaderboardTable key="all-time" load={getHighScores} uniquePlayers={uniquePlayers} />}
+      {tab === 'all-time' && <LeaderboardTable key="all-time" load={getHighScores} uniquePlayers={uniquePlayers} showDaily />}
 
       {tab === 'daily' && (
         <LeaderboardTable

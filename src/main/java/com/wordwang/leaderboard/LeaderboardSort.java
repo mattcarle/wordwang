@@ -7,7 +7,7 @@ import java.util.Locale;
 
 /** The leaderboard column a page is sorted by - one per table column on the frontend. */
 public enum LeaderboardSort {
-    RANK, PLAYER, SCORE, PERCENT, DATE;
+    RANK, PLAYER, SCORE, PERCENT, DATE, COUNT, DAILY;
 
     public static LeaderboardSort fromParam(String value) {
         try {

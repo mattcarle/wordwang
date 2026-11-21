@@ -5,8 +5,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Ranks, de-duplicates, sorts and pages a leaderboard in memory. Shared by the all-time and daily
@@ -30,13 +32,17 @@ public final class Leaderboard {
 
     public static LeaderboardPageView page(List<LeaderboardCandidate> candidates, LeaderboardQuery query) {
         List<LeaderboardCandidate> ordered = candidates.stream().sorted(RANK_ORDER).toList();
+        Map<String, Integer> gameCounts = null;
         if (query.uniquePlayers()) {
+            // Counted before collapsing to each player's best entry, so it's their total games.
+            gameCounts = ordered.stream()
+                    .collect(Collectors.toMap(c -> playerKey(c.playerName()), c -> 1, Integer::sum));
             ordered = bestEntryPerPlayer(ordered);
         }
 
         // assignRanks returns rank order and List.sort is stable, so rank order is the tie-break
         // for whichever column is sorted.
-        List<LeaderboardEntryView> sorted = assignRanks(ordered);
+        List<LeaderboardEntryView> sorted = assignRanks(ordered, gameCounts);
         sorted.sort(columnOrder(query.sort(), query.descending()));
 
         int from = Math.min(query.offset(), sorted.size());
@@ -71,12 +77,17 @@ public final class Leaderboard {
     private static List<LeaderboardCandidate> bestEntryPerPlayer(List<LeaderboardCandidate> ordered) {
         Set<String> seen = new HashSet<>();
         return ordered.stream()
-                .filter(c -> seen.add(c.playerName().trim().toLowerCase(Locale.ROOT)))
+                .filter(c -> seen.add(playerKey(c.playerName())))
                 .toList();
     }
 
+    private static String playerKey(String playerName) {
+        return playerName.trim().toLowerCase(Locale.ROOT);
+    }
+
     /** Standard competition ranking (1, 1, 3): only an equal score AND equal percent is a tie. */
-    private static List<LeaderboardEntryView> assignRanks(List<LeaderboardCandidate> ordered) {
+    private static List<LeaderboardEntryView> assignRanks(List<LeaderboardCandidate> ordered,
+                                                          Map<String, Integer> gameCounts) {
         List<LeaderboardEntryView> ranked = new ArrayList<>(ordered.size());
         for (int i = 0; i < ordered.size(); i++) {
             LeaderboardCandidate c = ordered.get(i);
@@ -88,16 +99,23 @@ public final class Leaderboard {
                     rank = ranked.get(i - 1).rank();
                 }
             }
-            ranked.add(new LeaderboardEntryView(rank, c.playerName(), c.score(), c.percentOfMaxPossible(), c.date()));
+            Integer gameCount = gameCounts == null ? null : gameCounts.get(playerKey(c.playerName()));
+            ranked.add(new LeaderboardEntryView(
+                    rank, c.playerName(), c.score(), c.percentOfMaxPossible(), c.date(), gameCount, c.daily()));
         }
         return ranked;
     }
 
     private static Comparator<LeaderboardEntryView> columnOrder(LeaderboardSort sort, boolean descending) {
-        if (sort == LeaderboardSort.PERCENT) {
-            // Entries with no recorded max stay at the bottom in both directions.
+        if (sort == LeaderboardSort.PERCENT || sort == LeaderboardSort.COUNT) {
+            // Entries with no value (no recorded max / not grouped by player) stay at the bottom in
+            // both directions.
             Comparator<Integer> direction = descending ? Comparator.reverseOrder() : Comparator.naturalOrder();
-            return Comparator.comparing(LeaderboardEntryView::percentOfMaxPossible, Comparator.nullsLast(direction));
+            return Comparator.comparing(
+                    sort == LeaderboardSort.PERCENT
+                            ? LeaderboardEntryView::percentOfMaxPossible
+                            : LeaderboardEntryView::gameCount,
+                    Comparator.nullsLast(direction));
         }
         Comparator<LeaderboardEntryView> ascending = switch (sort) {
             case RANK -> Comparator.comparingInt(LeaderboardEntryView::rank);
@@ -105,7 +123,8 @@ public final class Leaderboard {
             case SCORE -> Comparator.comparingInt(LeaderboardEntryView::score);
             case DATE -> Comparator.comparing(LeaderboardEntryView::date,
                     Comparator.nullsLast(Comparator.naturalOrder()));
-            case PERCENT -> throw new IllegalStateException("handled above");
+            case DAILY -> Comparator.comparing(LeaderboardEntryView::daily);
+            case PERCENT, COUNT -> throw new IllegalStateException("handled above");
         };
         return descending ? ascending.reversed() : ascending;
     }

@@ -65,7 +65,7 @@ export interface JoinableGameView {
   playerCount: number
 }
 
-export type LeaderboardSort = 'rank' | 'player' | 'score' | 'percent' | 'date'
+export type LeaderboardSort = 'rank' | 'player' | 'score' | 'percent' | 'date' | 'count' | 'daily'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -84,6 +84,10 @@ export interface LeaderboardEntryView {
   score: number
   percentOfMaxPossible: number | null
   date: string
+  /** The player's total games on this board; null unless the board is grouped by player. */
+  gameCount: number | null
+  /** True when the score came from a Daily Wang game. */
+  daily: boolean
 }
 
 export interface LeaderboardPageView {

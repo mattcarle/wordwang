@@ -12,13 +12,15 @@ interface LeaderboardTableProps {
   load: (query: LeaderboardQuery) => Promise<LeaderboardPageView>
   uniquePlayers: boolean
   emptyMessage?: string
+  /** Add a Daily (Y/N) column; for the main board, which includes Daily Wang scores. */
+  showDaily?: boolean
 }
 
 /**
  * A leaderboard that fetches its own pages: sorting happens server-side (so ranks and ordering
  * are over the whole board, not just what's loaded), and "Load more" appends the next page.
  */
-export function LeaderboardTable({ load, uniquePlayers, emptyMessage }: LeaderboardTableProps) {
+export function LeaderboardTable({ load, uniquePlayers, emptyMessage, showDaily }: LeaderboardTableProps) {
   const [sort, setSort] = useState<ScoreTableSort>(DEFAULT_SORT)
   const [entries, setEntries] = useState<LeaderboardEntryView[] | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -71,7 +73,14 @@ export function LeaderboardTable({ load, uniquePlayers, emptyMessage }: Leaderbo
 
   return (
     <div className="leaderboard-table">
-      <ScoreTable rows={entries} emptyMessage={emptyMessage} sort={sort} onSortChange={setSort} />
+      <ScoreTable
+        rows={entries}
+        emptyMessage={emptyMessage}
+        sort={sort}
+        onSortChange={setSort}
+        showCount={uniquePlayers}
+        showDaily={showDaily}
+      />
       {error && <p className="form-error">{error}</p>}
       {hasMore && (
         <button type="button" className="btn btn-secondary load-more-btn" onClick={loadMore} disabled={loadingMore}>
