@@ -29,7 +29,7 @@ export function HighScoresPage() {
     const requested = searchParams.get('tab')
     return isTab(requested) ? requested : 'all-time'
   })
-  const [allowRepeatPlayers, setAllowRepeatPlayers] = useState(true)
+  const [groupByPlayer, setGroupByPlayer] = useState(false)
 
   const [history, setHistory] = useState<DailyHistoryEntryView[] | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(null)
@@ -46,7 +46,7 @@ export function HighScoresPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab])
 
-  const uniquePlayers = !allowRepeatPlayers
+  const uniquePlayers = groupByPlayer
 
   return (
     <main className="page">
@@ -67,10 +67,10 @@ export function HighScoresPage() {
       <label className="leaderboard-option">
         <input
           type="checkbox"
-          checked={allowRepeatPlayers}
-          onChange={(e) => setAllowRepeatPlayers(e.target.checked)}
+          checked={groupByPlayer}
+          onChange={(e) => setGroupByPlayer(e.target.checked)}
         />
-        Allow the same player to appear more than once
+        Group by Player
       </label>
 
       {tab === 'all-time' && <LeaderboardTable key="all-time" load={getHighScores} uniquePlayers={uniquePlayers} />}
