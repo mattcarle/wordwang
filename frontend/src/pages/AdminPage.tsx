@@ -161,7 +161,7 @@ export function AdminPage() {
     <main className="page">
       <h1>Admin</h1>
       <button type="button" className="btn btn-secondary" onClick={handleClearHighScores} disabled={busy}>
-        Clear Leaderboardpm
+        Clear Leaderboard
       </button>
       {clearStatus && <p className="form-success">{clearStatus}</p>}
 
