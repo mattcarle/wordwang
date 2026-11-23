@@ -67,10 +67,16 @@ public class GameFinalizerScheduler {
                     highScoreService.recordScore(player.name(), player.score(), gameId, result.maxPossibleScore());
                 }
             }
-            auditService.recordGame(result);
+            // Scores are saved above, before this broadcast, because the results screen asks for the
+            // player's leaderboard rank as soon as it appears. Everything slower must come after it.
             GameEndedEvent event = new GameEndedEvent(result.solutionWord(), result.winners(), result.players(),
                     result.maxPossibleScore(), result.dailyChallengeDate());
             messagingTemplate.convertAndSend("/topic/game/" + gameId, event);
+
+            // The audit record does a geolocation lookup per player (a live HTTPS call, up to 6s
+            // each in the worst case). Do it as its own task so players never wait on it for the
+            // results screen - nor does a quitting organiser's request wait on it.
+            taskScheduler.schedule(() -> auditService.recordGame(result), Instant.now());
         });
     }
 }
