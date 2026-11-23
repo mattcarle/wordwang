@@ -14,6 +14,8 @@ import com.wordwang.game.dto.PossibleWordsGroup;
 import com.wordwang.game.model.Game;
 import com.wordwang.game.model.GameStatus;
 import com.wordwang.game.model.Player;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +46,12 @@ public class GameService {
     static final Duration START_COUNTDOWN = Duration.ofMillis(1000).plusSeconds(3);
     private static final Duration LOBBY_TTL = Duration.ofMinutes(30);
     private static final Duration FINISHED_TTL = Duration.ofMinutes(10);
+
+    private static final Logger log = LoggerFactory.getLogger(GameService.class);
+
+    private static long millis(long fromNanos, long toNanos) {
+        return (toNanos - fromNanos) / 1_000_000;
+    }
 
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final DictionaryService dictionaryService;
@@ -211,8 +219,11 @@ public class GameService {
      * task and an organiser quitting early) return empty so the game only gets finalized once.
      */
     public Optional<GameEndResult> finalizeGame(String gameId, boolean endedByQuit) {
+        long startNanos = System.nanoTime();
         Game game = requireGame(gameId);
+        Instant calledAt = Instant.now();
         synchronized (game) {
+            long lockedNanos = System.nanoTime();
             if (game.getStatus() == GameStatus.FINISHED) {
                 return Optional.empty();
             }
@@ -221,7 +232,14 @@ public class GameService {
             List<PlayerView> players = sortedPlayerViews(game);
             List<PlayerView> winners = computeWinners(players);
             List<PlayerAuditView> playerAudits = buildPlayerAudits(game, winners);
+            long summariesDoneNanos = System.nanoTime();
             int maxPossibleScore = computeMaxPossibleScore(game.getSolutionWord());
+            long doneNanos = System.nanoTime();
+            long behindEndsAtMs = game.getEndsAt() == null ? -1 : Duration.between(game.getEndsAt(), calledAt).toMillis();
+            log.info("End-of-game timing [game {}]: finalize started {}ms after endsAt (lock wait {}ms), "
+                            + "players/winners/audits {}ms, max possible score {}ms, finalize total {}ms",
+                    gameId, behindEndsAtMs, millis(startNanos, lockedNanos), millis(lockedNanos, summariesDoneNanos),
+                    millis(summariesDoneNanos, doneNanos), millis(startNanos, doneNanos));
             return Optional.of(new GameEndResult(game.getId(), game.getCreatedAt(), game.getSolutionWord(), winners,
                     players, playerAudits, maxPossibleScore, game.getDailyChallengeDate(), game.getDailyPlayerId(),
                     game.getStartedAt(), game.getFinishedAt(), endedByQuit));

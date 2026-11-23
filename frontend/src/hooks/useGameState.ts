@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getGameSnapshot } from '../api/games'
 import { useGameSocket } from './useGameSocket'
+import { logGameEndedReceived } from '../utils/endOfGameTiming'
 import type { GameEvent, GameStatus, GuessFeedbackEvent, PlayerView } from '../types/game'
 
 export interface GameState {
@@ -106,6 +107,7 @@ export function useGameState(gameId: string | undefined, playerId: string | null
           }
           break
         case 'GAME_ENDED':
+          logGameEndedReceived()
           setState((prev) => ({
             ...prev,
             status: 'FINISHED',

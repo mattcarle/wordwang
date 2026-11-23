@@ -6,6 +6,7 @@ import { getDailyLeaderboard } from '../../api/daily'
 import { getPossibleWords } from '../../api/games'
 import { getHighScoreRank } from '../../api/highscores'
 import { saveDailyCompletion } from '../../utils/dailyCompletion'
+import { logResultsRendered } from '../../utils/endOfGameTiming'
 import { playApplauseSound, playGameEndSound } from '../../utils/sound'
 import type { PlayerView, PossibleWordsGroup } from '../../types/game'
 
@@ -94,6 +95,7 @@ export function ResultsView({
   const totalPossiblePoints = possibleWords?.reduce((sum, g) => sum + g.words.length * g.pointsPerWord, 0) ?? 0
 
   useEffect(() => {
+    logResultsRendered()
     if (isWinner) {
       playApplauseSound()
     } else {
