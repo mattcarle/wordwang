@@ -50,6 +50,8 @@ export interface GameSnapshotResponse {
   winners: PlayerView[]
   maxPossibleScore: number
   dailyChallengeDate: string | null
+  /** The server's clock when the snapshot was taken - see utils/serverClock.ts. */
+  serverTime: string
 }
 
 export interface PossibleWordsGroup {
@@ -109,6 +111,8 @@ export interface GameStartedEvent {
   type: 'GAME_STARTED'
   scrambledWord: string
   endsAt: string
+  /** The server's clock when the message was sent - see utils/serverClock.ts. */
+  serverTime: string
 }
 
 export interface ScoreUpdateEvent {

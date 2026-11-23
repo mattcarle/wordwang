@@ -1,9 +1,10 @@
 /**
- * Console timing for the end-of-game delay: shows, on the player's own clock, how long after the
- * round's `endsAt` the timer hit 0, the server's GAME_ENDED message arrived, and the results screen
- * rendered. Search the browser console for "[wordwang timing]". Clock differences between the
- * player's device and the server show up as a constant offset in all three numbers.
+ * Console timing for the end-of-game delay: shows how long after the round's `endsAt` the timer hit
+ * 0, the server's GAME_ENDED message arrived, and the results screen rendered. Times are read from
+ * the server-corrected clock (see serverClock.ts), so they mean the same thing whatever the
+ * device's own clock says. Search the browser console for "[wordwang timing]".
  */
+import { serverClockOffsetMs, serverNow } from './serverClock'
 
 let endsAtMs: number | null = null
 let messageReceivedAt: number | null = null
@@ -18,16 +19,18 @@ export function noteRoundEndsAt(endsAt: string | null) {
 }
 
 export function logTimerReachedZero() {
-  console.info(`[wordwang timing] timer reached 0: ${sinceEnds(Date.now())}`)
+  console.info(
+    `[wordwang timing] timer reached 0: ${sinceEnds(serverNow())} (device clock is ${-serverClockOffsetMs()}ms ahead of the server)`,
+  )
 }
 
 export function logGameEndedReceived() {
-  messageReceivedAt = Date.now()
+  messageReceivedAt = serverNow()
   console.info(`[wordwang timing] GAME_ENDED message received: ${sinceEnds(messageReceivedAt)}`)
 }
 
 export function logResultsRendered() {
-  const now = Date.now()
+  const now = serverNow()
   const sinceMessage = messageReceivedAt === null ? 'n/a' : `${now - messageReceivedAt}ms after the message`
   console.info(`[wordwang timing] results screen rendered: ${sinceEnds(now)} (${sinceMessage})`)
 }

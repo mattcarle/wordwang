@@ -293,7 +293,8 @@ public class GameService {
                     yourFoundWords,
                     winners,
                     maxPossibleScore,
-                    game.getDailyChallengeDate());
+                    game.getDailyChallengeDate(),
+                    Instant.now());
         }
     }
 

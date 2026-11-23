@@ -21,5 +21,7 @@ public record GameSnapshotResponse(
         List<String> yourFoundWords,
         List<PlayerView> winners,
         int maxPossibleScore,
-        LocalDate dailyChallengeDate) {
+        LocalDate dailyChallengeDate,
+        /** The server's clock when the snapshot was taken, so clients can correct for their own clock being off. */
+        Instant serverTime) {
 }

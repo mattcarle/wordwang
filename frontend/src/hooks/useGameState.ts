@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { getGameSnapshot } from '../api/games'
 import { useGameSocket } from './useGameSocket'
 import { logGameEndedReceived } from '../utils/endOfGameTiming'
+import { syncServerClock } from '../utils/serverClock'
 import type { GameEvent, GameStatus, GuessFeedbackEvent, PlayerView } from '../types/game'
 
 export interface GameState {
@@ -52,6 +53,7 @@ export function useGameState(gameId: string | undefined, playerId: string | null
     getGameSnapshot(gameId, playerId ?? undefined)
       .then((snapshot) => {
         if (cancelled) return
+        syncServerClock(snapshot.serverTime)
         setState({
           loading: false,
           error: null,
@@ -89,6 +91,7 @@ export function useGameState(gameId: string | undefined, playerId: string | null
           setState((prev) => ({ ...prev, status: 'STARTING', countdownEndsAt: event.countdownEndsAt }))
           break
         case 'GAME_STARTED':
+          syncServerClock(event.serverTime)
           setState((prev) => ({
             ...prev,
             status: 'IN_PROGRESS',

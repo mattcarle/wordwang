@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { logTimerReachedZero, noteRoundEndsAt } from '../../utils/endOfGameTiming'
+import { serverNow } from '../../utils/serverClock'
 
 interface CountdownTimerProps {
   endsAt: string
 }
 
 export function CountdownTimer({ endsAt }: CountdownTimerProps) {
-  const [remainingMs, setRemainingMs] = useState(() => new Date(endsAt).getTime() - Date.now())
+  const [remainingMs, setRemainingMs] = useState(() => new Date(endsAt).getTime() - serverNow())
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setRemainingMs(new Date(endsAt).getTime() - Date.now())
+      setRemainingMs(new Date(endsAt).getTime() - serverNow())
     }, 200)
     return () => clearInterval(interval)
   }, [endsAt])
